@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>CVE-List OnurOKTAY/title>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; }
+        .cve-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .cve-id { font-weight: bold; color: #d32f2f; }
+        .cvss { float: right; background: #eee; padding: 2px 8px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Son Yayınlanan CVE Numaraları</h1>
+    <div id="cve-list">Yükleniyor...</div>
+
+    <script>
+        async function fetchCVEs() {
+            try {
+                // CIRCL API'den son verileri çekiyoruz
+                const response = await fetch('https://cve.circl.lu/api/last');
+                const data = await response.json();
+                
+                const container = document.getElementById('cve-list');cvecve
+                container.innerHTML = '';
+
+                data.slice(0, 10).forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'cve-card';
+                    card.innerHTML = `
+                        <span class="cvss">${item.cvss || 'N/A'}</span>
+                        <div class="cve-id">${item.id}</div>
+                        <p>${item.summary.substring(0, 200)}...</p>
+                        <a href="https://nvd.nist.gov/vuln/detail/${item.id}" target="_blank">Detayları Gör</a>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                document.getElementById('cve-list').innerText = 'Veri çekilirken bir hata oluştu.';
+            }
+        }
+        fetchCVEs();
+    </script>
+</body>
+</html>
