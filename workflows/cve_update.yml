@@ -1,1 +1,23 @@
-d
+name: Update CVE Data
+on:
+  schedule:
+    - cron: '0 */6 * * *' # Her 6 saatte bir çalışır
+  workflow_dispatch: # Manuel çalıştırma butonu ekler
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Fetch CVE Data
+        run: |
+          curl -s "https://cve.circl.lu/api/last" > data.json
+      - name: Commit and Push
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add data.json
+          git commit -m "CVE verileri güncellendi" || exit 0
+          git push
