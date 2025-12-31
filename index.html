@@ -3,33 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CVE Takip</title>
+    <title>CVE Takip Paneli</title>
     <style>
-        :root { --bg: #f8f9fa; --card: #ffffff; --text: #212529; --accent: #007bff; --danger: #dc3545; --warning: #ffc107; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); padding: 20px; line-height: 1.6; }
-        .container { max-width: 900px; margin: auto; }
-        .header { text-align: center; margin-bottom: 40px; border-bottom: 3px solid var(--accent); padding-bottom: 10px; }
+        :root { 
+            --bg: #f4f7f9; 
+            --card: #ffffff; 
+            --text: #2c3e50; 
+            --accent: #3498db; 
+            --danger: #e74c3c; 
+            --warning: #f1c40f; 
+            --success: #27ae60;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 20px; line-height: 1.6; }
+        .container { max-width: 1000px; margin: auto; }
         
-        .cve-card { background: var(--card); border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 6px solid #dee2e6; }
+        header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #ddd; padding-bottom: 20px; }
+        h1 { margin: 0; color: #1a1a2e; }
+        #status { font-size: 0.9rem; color: #666; margin-top: 10px; }
+
+        .cve-card { 
+            background: var(--card); 
+            border-radius: 12px; 
+            padding: 25px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+            border-left: 8px solid #cbd5e0; 
+            transition: transform 0.2s;
+        }
+        .cve-card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        
         .cve-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .cve-id { font-size: 1.3rem; font-weight: 800; color: var(--accent); text-decoration: none; }
+        .cve-id { font-size: 1.4rem; font-weight: 800; color: var(--accent); text-decoration: none; }
         
-        .badge { padding: 5px 12px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; }
+        .badge { padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; background: #edf2f7; }
         .high { background: var(--danger); color: white; }
         .medium { background: var(--warning); color: black; }
         
-        .desc { font-size: 0.95rem; color: #495057; background: #f1f3f5; padding: 10px; border-radius: 5px; margin: 10px 0; }
-        .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.8rem; color: #6c757d; margin-top: 15px; }
+        .desc { font-size: 1rem; color: #4a5568; background: #f8fafc; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px inset #eee; }
+        
+        .cwe-container { margin: 10px 0; }
+        .cwe-tag { 
+            display: inline-block; 
+            background: #e2e8f0; 
+            color: #4a5568; 
+            padding: 3px 10px; 
+            border-radius: 4px; 
+            font-size: 0.75rem; 
+            margin-right: 8px; 
+            margin-bottom: 5px;
+            border: 1px solid #cbd5e0;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .cwe-tag:hover { background: #cbd5e0; }
+
+        .meta-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 15px; 
+            font-size: 0.85rem; 
+            color: #718096; 
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #edf2f7;
+        }
+        .attack-link { color: #2b6cb0; font-weight: bold; text-decoration: none; }
+        .attack-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="header">
-        <h1>Canlı CVE Takip Sistemi</h1>
-        <p id="status">Veriler senkronize ediliyor...</p>
-    </div>
-    <div id="cve-list"></div>
+    <header>
+        <h1>Canlı CVE & MITRE Takip Paneli</h1>
+        <p id="status">Veri kaynağı kontrol ediliyor...</p>
+    </header>
+
+    <div id="cve-list">
+        </div>
 </div>
 
 <script>
@@ -41,20 +92,19 @@
             const response = await fetch('./data.json?t=' + Date.now());
             const data = await response.json();
 
-            if (!Array.isArray(data)) throw new Error("Veri formatı uyumsuz.");
+            if (!Array.isArray(data)) throw new Error("JSON formatı uyumsuz.");
 
-            status.innerText = `Son ${data.length} kritik zafiyet listeleniyor.`;
+            status.innerText = `Son ${data.length} kayıt başarıyla yüklendi.`;
             listContainer.innerHTML = '';
 
             data.forEach(item => {
-                // JSON 5.0 Yapısını Çözümleme
                 const cveId = item.cveMetadata?.cveId || "Bilinmiyor";
                 
-                // Açıklama: containers.cna.descriptions içindeki ilk değeri al
+                // 1. Açıklama Çekme
                 const descriptions = item.containers?.cna?.descriptions || [];
-                const summary = descriptions.length > 0 ? descriptions[0].value : "Açıklama mevcut değil.";
+                const summary = descriptions.length > 0 ? descriptions[0].value : "Açıklama bulunamadı.";
                 
-                // CVSS Puanı: containers.cna.metrics içindeki score'u bul
+                // 2. CVSS Puanı Hesaplama
                 let score = 0;
                 const metrics = item.containers?.cna?.metrics || [];
                 if (metrics.length > 0) {
@@ -62,13 +112,27 @@
                     score = m.cvssV3_1?.baseScore || m.cvssV3_0?.baseScore || m.cvssV2?.baseScore || 0;
                 }
 
-                const state = item.cveMetadata?.state || "PUBLISHED";
-                const date = item.cveMetadata?.datePublished || "Tarih yok";
+                // 3. CWE (Zafiyet Türü) Çekme
+                let cweTagsHTML = "";
+                const problemTypes = item.containers?.cna?.problemTypes || [];
+                problemTypes.forEach(prob => {
+                    prob.descriptions.forEach(desc => {
+                        const cweMatch = desc.cweId || desc.description?.match(/CWE-\d+/)?.[0];
+                        if (cweMatch) {
+                            const cweIdNum = cweMatch.split('-')[1];
+                            cweTagsHTML += `<a href="https://cwe.mitre.org/data/definitions/${cweIdNum}.html" target="_blank" class="cwe-tag">${cweMatch}</a>`;
+                        }
+                    });
+                });
 
+                // Kartı Oluşturma
                 const card = document.createElement('div');
                 card.className = 'cve-card';
+                
+                // Kritiklik Seviyesine Göre Renk Ayarı
                 if (score >= 7) card.style.borderColor = 'var(--danger)';
                 else if (score >= 4) card.style.borderColor = 'var(--warning)';
+                else if (score > 0) card.style.borderColor = 'var(--success)';
 
                 card.innerHTML = `
                     <div class="cve-header">
@@ -77,10 +141,18 @@
                             CVSS: ${score > 0 ? score : 'N/A'}
                         </span>
                     </div>
+                    
                     <div class="desc">${summary}</div>
+                    
+                    <div class="cwe-container">
+                        <small style="display:block; margin-bottom:5px; color:#718096; font-weight:bold;">Zafiyet Türü (CWE):</small>
+                        ${cweTagsHTML || '<span class="cwe-tag">CWE Belirtilmemiş</span>'}
+                    </div>
+
                     <div class="meta-grid">
-                        <div>📅 Yayınlanma: ${date.split('T')[0]}</div>
-                        <div>📊 Durum: ${state}</div>
+                        <div>📅 Yayınlanma: ${item.cveMetadata?.datePublished?.split('T')[0] || 'Bilinmiyor'}</div>
+                        <div>⚔️ <a href="https://attack.mitre.org/techniques/enterprise/" target="_blank" class="attack-link">MITRE ATT&CK Matrix ↗</a></div>
+                        <div>📊 Durum: <strong>${item.cveMetadata?.state || 'PUBLISHED'}</strong></div>
                     </div>
                 `;
                 listContainer.appendChild(card);
@@ -88,11 +160,12 @@
 
         } catch (err) {
             console.error(err);
-            status.innerHTML = "❌ Veri işleme hatası: JSON yapısı beklenen formatta değil.";
+            status.innerHTML = "❌ Veri yükleme hatası: data.json dosyası veya JSON yapısı hatalı.";
         }
     }
 
     loadCVEs();
 </script>
+
 </body>
 </html>
