@@ -3,87 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CVE Takip Paneli</title>
+    <title>CVE Takip - Onr Mode</title>
     <style>
-        :root { --primary: #1a1a2e; --danger: #e94560; --warning: #f8b400; --text: #333; }
-        body { font-family: 'Inter', system-ui, sans-serif; background: #f0f2f5; color: var(--text); padding: 20px; }
-        .container { max-width: 900px; margin: auto; }
-        h1 { text-align: center; color: var(--primary); margin-bottom: 30px; }
-        #update-status { text-align: center; font-size: 0.85rem; color: #666; margin-bottom: 20px; }
-        .cve-card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 6px solid #ccc; }
-        .cve-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .cve-id { font-weight: 800; font-size: 1.2rem; color: var(--danger); text-decoration: none; }
-        .cvss-badge { font-weight: bold; padding: 4px 10px; border-radius: 6px; background: #eee; font-size: 0.85rem; }
-        .high { background: var(--danger); color: white; }
-        .summary { font-size: 0.95rem; line-height: 1.5; color: #444; }
-        .footer-meta { margin-top: 10px; font-size: 0.75rem; color: #999; border-top: 1px solid #eee; pt: 10px; }
+        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; }
+        .container { max-width: 800px; margin: auto; }
+        .card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid #2c3e50; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .debug-box { background: #333; color: #0f0; padding: 10px; font-family: monospace; font-size: 12px; margin-bottom: 20px; border-radius: 5px; overflow: auto; max-height: 200px; }
+        .cve-id { font-weight: bold; color: #e74c3c; font-size: 1.1em; }
+        .puan { float: right; font-weight: bold; background: #eee; padding: 2px 8px; border-radius: 4px; }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h1>CVE Takip Sistemi</h1>
+        <div id="debug" class="debug-box">Veri yapısı kontrol ediliyor...</div>
+        <div id="list">Yükleniyor...</div>
+    </div>
 
-<div class="container">
-    <h1>Güncel CVE Takip</h1>
-    <div id="update-status">Veriler kontrol ediliyor...</div>
-    <div id="cve-list"></div>
-</div>
+    <script>
+        async function checkData() {
+            const listDiv = document.getElementById('list');
+            const debugDiv = document.getElementById('debug');
+            
+            try {
+                // Tarayıcı önbelleğini (cache) kırmak için her seferinde farklı bir sayı ekliyoruz
+                const response = await fetch('./data.json?nocache=' + Math.random());
+                const data = await response.json();
 
-<script>
-    async function loadData() {
-        const container = document.getElementById('cve-list');
-        const status = document.getElementById('update-status');
+                if (!data || data.length === 0) {
+                    debugDiv.innerText = "Hata: data.json dosyası boş veya okunamadı.";
+                    return;
+                }
 
-        try {
-            // Veriyi çek (Önbelleği önlemek için t= ekledik)
-            const response = await fetch('./data.json?t=' + Date.now());
-            const data = await response.json();
+                // Gelen ilk verinin içindeki gerçek anahtar isimlerini debug kutusuna yazalım
+                const keys = Object.keys(data[0]);
+                debugDiv.innerText = "API'den Gelen Anahtarlar: " + keys.join(", ") + "\nÖrnek Veri: " + JSON.stringify(data[0]).substring(0, 100) + "...";
 
-            // Konsol Log: Verinin yapısını incelemek için (Hata olursa buraya bakacağız)
-            console.log("Gelen Veri:", data);
+                listDiv.innerHTML = '';
+                
+                data.slice(0, 20).forEach(item => {
+                    // CIRCL API bazen veriyi 'id' değil 'Modified' veya farklı isimlerle verebilir
+                    // En yaygın anahtarları tek tek deniyoruz:
+                    const cveId = item.id || item.ID || item.cve_id || "ID Yok";
+                    const summary = item.summary || item.Summary || item.description || "Açıklama mevcut değil.";
+                    const cvss = item.cvss || item.cvss_score || "N/A";
 
-            if (!Array.isArray(data)) {
-                status.innerText = "Hata: Veri formatı liste değil.";
-                return;
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <span class="puan">CVSS: ${cvss}</span>
+                        <div class="cve-id">${cveId}</div>
+                        <p>${summary}</p>
+                        <a href="https://nvd.nist.gov/vuln/detail/${cveId}" target="_blank">Detayları Gör</a>
+                    `;
+                    listDiv.appendChild(card);
+                });
+
+            } catch (err) {
+                debugDiv.innerText = "Hata: " + err.message;
+                listDiv.innerText = "Veriler yüklenirken bir hata oluştu. GitHub Actions'ın data.json'ı oluşturduğundan emin olun.";
             }
-
-            status.innerText = `Son ${data.length} zafiyet başarıyla yüklendi.`;
-            container.innerHTML = '';
-
-            data.slice(0, 30).forEach(item => {
-                // Veri Yapısını Akıllıca Çözümle (Farklı isim ihtimallerini kontrol eder)
-                const cveId = item.id || item.ID || item.cve_id || "Bilinmiyor";
-                const cveSummary = item.summary || item.Summary || item.description || item.Summary_en || "Açıklama mevcut değil.";
-                const cvss = parseFloat(item.cvss || item.cvss_score || item.cvss_v3) || 0;
-                const pubDate = item.Published || item.published_at || item.last_modified || "-";
-
-                // Puan Renklendirme
-                let cvssClass = '';
-                if (cvss >= 7) cvssClass = 'high';
-
-                const card = document.createElement('div');
-                card.className = 'cve-card';
-                if(cvss >= 7) card.style.borderColor = 'var(--danger)';
-                else if(cvss >= 4) card.style.borderColor = 'var(--warning)';
-
-                card.innerHTML = `
-                    <div class="cve-header">
-                        <a href="https://nvd.nist.gov/vuln/detail/${cveId}" target="_blank" class="cve-id">${cveId}</a>
-                        <span class="cvss-badge ${cvssClass}">CVSS: ${cvss > 0 ? cvss : 'N/A'}</span>
-                    </div>
-                    <div class="summary">${cveSummary}</div>
-                    <div class="footer-meta">
-                        Yayınlanma: ${pubDate} | Kaynak: CIRCL API
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-
-        } catch (e) {
-            console.error(e);
-            status.innerText = "Veri yüklenirken hata oluştu. Lütfen data.json dosyasını kontrol edin.";
         }
-    }
-
-    loadData();
-</script>
+        checkData();
+    </script>
 </body>
 </html>
