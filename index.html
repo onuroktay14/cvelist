@@ -2,45 +2,72 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>CVE-List OnurOKTAY/title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CVE Takip Paneli</title>
     <style>
-        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; }
-        .cve-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .cve-id { font-weight: bold; color: #d32f2f; }
-        .cvss { float: right; background: #eee; padding: 2px 8px; border-radius: 4px; }
+        :root { --primary: #2c3e50; --danger: #e74c3c; --warning: #f1c40f; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; line-height: 1.6; padding: 20px; }
+        .container { max-width: 900px; margin: auto; }
+        h1 { text-align: center; color: var(--primary); }
+        .cve-card { background: white; padding: 20px; margin-bottom: 15px; border-radius: 10px; border-left: 5px solid var(--primary); box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; }
+        .cve-card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        .cve-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .cve-id { font-size: 1.2rem; font-weight: bold; color: var(--danger); text-decoration: none; }
+        .cvss-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; background: #eee; }
+        .high { background: #ff4d4d; color: white; }
+        p { font-size: 0.95rem; color: #555; }
     </style>
 </head>
 <body>
-    <h1>Son Yayınlanan CVE Numaraları</h1>
-    <div id="cve-list">Yükleniyor...</div>
+    <div class="container">
+        <h1>🛡️ Güncel Zafiyet Takip Listesi</h1>
+        <div id="status">Veriler kontrol ediliyor...</div>
+        <div id="cve-list"></div>
+    </div>
 
-   <script>
-    async function fetchCVEs() {
-        try {
-            // Dış API yerine kendi oluşturduğumuz JSON'ı çekiyoruz
-            const response = await fetch('./data.json'); 
-            const data = await response.json();
-            
+    <script>
+        async function fetchCVEs() {
             const container = document.getElementById('cve-list');
-            container.innerHTML = '';
+            const status = document.getElementById('status');
+            
+            try {
+                // Önbellek (cache) sorununu önlemek için zaman damgası ekliyoruz
+                const response = await fetch('./data.json?t=' + new Date().getTime());
+                
+                if (!response.ok) throw new Error("Veri dosyası bulunamadı.");
+                
+                const data = await response.json();
+                
+                if (data.length === 0) {
+                    status.innerHTML = "⚠️ Veri dosyası şu an boş. Action'ın bitmesini bekleyin.";
+                    return;
+                }
 
-            data.slice(0, 15).forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'cve-card';
-                card.innerHTML = `
-                    <span class="cvss">${item.cvss || 'N/A'}</span>
-                    <div class="cve-id">${item.id}</div>
-                    <p>${item.summary}</p>
-                    <a href="https://nvd.nist.gov/vuln/detail/${item.id}" target="_blank">Detaylar</a>
-                `;
-                container.appendChild(card);
-            });
-        } catch (error) {
-            console.error("Hata:", error);
-            document.getElementById('cve-list').innerText = 'Veriler henüz yüklenemedi (Action çalışmamış olabilir).';
+                status.style.display = 'none';
+                container.innerHTML = '';
+
+                data.slice(0, 20).forEach(item => {
+                    const score = parseFloat(item.cvss) || 0;
+                    const badgeClass = score >= 7 ? 'high' : '';
+                    
+                    const card = document.createElement('div');
+                    card.className = 'cve-card';
+                    card.innerHTML = `
+                        <div class="cve-header">
+                            <a class="cve-id" href="https://nvd.nist.gov/vuln/detail/${item.id}" target="_blank">${item.id}</a>
+                            <span class="cvss-badge ${badgeClass}">CVSS: ${item.cvss || 'N/A'}</span>
+                        </div>
+                        <p>${item.summary}</p>
+                        <small>Kaynak: CIRCL.lu</small>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error(error);
+                status.innerHTML = "❌ Hata: Veriler yüklenemedi. Lütfen 'data.json' dosyasının oluştuğundan emin olun.";
+            }
         }
-    }
-    fetchCVEs();
-</script>
+        fetchCVEs();
+    </script>
 </body>
 </html>
