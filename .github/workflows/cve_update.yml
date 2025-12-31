@@ -1,0 +1,30 @@
+name: Update CVE Data
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Tüm geçmişi çekerek çakışmaları önler
+
+      - name: Fetch CVE Data
+        run: |
+          curl -s "https://cve.circl.lu/api/last" > data.json
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          # Eğer değişiklik yoksa hata vermemesi için:
+          git commit -m "CVE verileri güncellendi" || exit 0
+          # Çakışmaları önlemek için güncel halini çek ve üstüne ekle
+          git pull --rebase origin main
+          git push
