@@ -2,80 +2,144 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Canlı CVE ve Exploit Takip Paneli</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aktif CVE ve Exploit Takibi</title>
     <style>
-        :root { --danger: #e74c3c; --warning: #f1c40f; --exploit: #8e44ad; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }
-        .cve-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-left: 8px solid #cbd5e0; position: relative; }
-        .exploit-badge { 
-            position: absolute; top: -10px; right: 10px; 
-            background: var(--exploit); color: white; padding: 5px 15px; 
-            border-radius: 20px; font-weight: bold; font-size: 0.8rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            animation: pulse 2s infinite;
+        :root { 
+            --primary: #1a202c; --accent: #3182ce; --danger: #e53e3e; 
+            --warning: #dd6b20; --exploit: #805ad5; --success: #38a169;
         }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
-        .cve-id { font-size: 1.4rem; font-weight: 800; color: #2c3e50; text-decoration: none; }
-        .score-badge { padding: 5px 10px; border-radius: 5px; font-weight: bold; margin-left: 10px; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #f7fafc; color: #2d3748; padding: 20px; line-height: 1.5; }
+        .container { max-width: 1000px; margin: auto; }
+        
+        header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid var(--accent); padding-bottom: 20px; }
+        #status { font-weight: 600; color: #4a5568; background: #edf2f7; display: inline-block; padding: 5px 15px; border-radius: 20px; }
+
+        .cve-card { 
+            background: white; border-radius: 12px; padding: 25px; margin-bottom: 20px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 8px solid #cbd5e0; 
+            position: relative; transition: 0.2s;
+        }
+        .cve-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+        
+        .exploit-badge { 
+            position: absolute; top: -12px; right: 20px; 
+            background: var(--exploit); color: white; padding: 6px 14px; 
+            border-radius: 8px; font-weight: 900; font-size: 0.75rem;
+            animation: pulse 2s infinite; border: 2px solid white;
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        .cve-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .cve-id { font-size: 1.4rem; font-weight: 800; color: var(--accent); text-decoration: none; }
+        
+        .cvss-badge { padding: 5px 12px; border-radius: 6px; font-weight: bold; font-size: 0.9rem; background: #edf2f7; }
         .high { background: var(--danger); color: white; }
-        .desc { background: #f8fafc; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #edf2f7; }
-        .cwe-tag { font-size: 0.75rem; background: #e2e8f0; padding: 3px 8px; border-radius: 4px; margin-right: 5px; text-decoration: none; color: #4a5568; }
+        .medium { background: var(--warning); color: white; }
+
+        .desc { font-size: 1rem; color: #4a5568; background: #f8fafc; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #e2e8f0; }
+
+        .cwe-tag { 
+            display: inline-block; background: #ebf8ff; color: #2b6cb0; 
+            padding: 3px 10px; border-radius: 5px; font-size: 0.75rem; 
+            margin-right: 8px; font-weight: 700; text-decoration: none; border: 1px solid #bee3f8;
+        }
+        
+        .meta-grid { 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 15px; font-size: 0.8rem; color: #718096; margin-top: 20px; padding-top: 15px; border-top: 1px solid #edf2f7;
+        }
+        .attack-link { color: var(--exploit); font-weight: 800; text-decoration: none; }
     </style>
 </head>
 <body>
 
-<div style="max-width: 900px; margin: auto;">
-    <h1 style="text-align:center;">Canlı CVE & Exploit Takibi</h1>
-    <div id="cve-list">Yükleniyor...</div>
+<div class="container">
+    <header>
+        <h1>Aktif CVE & Exploit Takibi</h1>
+        <div id="status">Veriler yükleniyor...</div>
+    </header>
+
+    <div id="cve-list"></div>
 </div>
 
 <script>
-    async function fetchAll() {
-        const container = document.getElementById('cve-list');
-        try {
-            const res = await fetch('./data.json?t=' + Date.now());
-            const data = await res.json();
-            container.innerHTML = '';
+    async function updateDashboard() {
+        const listContainer = document.getElementById('cve-list');
+        const statusEl = document.getElementById('status');
 
-            data.forEach(item => {
+        try {
+            const response = await fetch('./data.json?t=' + Date.now());
+            const data = await response.json();
+
+            statusEl.innerText = `✅ Son ${Math.min(data.length, 30)} kayıt başarıyla yüklendi.`;
+            listContainer.innerHTML = '';
+
+            data.slice(0, 30).forEach(item => {
                 const cveId = item.cveMetadata?.cveId || "Bilinmiyor";
                 
-                // CVSS PUANI BULMA (Gelişmiş Arama)
+                // 1. Gelişmiş CVSS Arama (CNA + ADP)
                 let score = 0;
-                // Önce CNA verisine bak
-                const cnaMetrics = item.containers?.cna?.metrics || [];
-                // Sonra varsa ADP (ek veri) kısmına bak
-                const adpMetrics = item.containers?.adp?.[0]?.metrics || [];
-                const allMetrics = [...cnaMetrics, ...adpMetrics];
-                
-                allMetrics.forEach(m => {
+                const metrics = [
+                    ...(item.containers?.cna?.metrics || []),
+                    ...(item.containers?.adp?.[0]?.metrics || [])
+                ];
+                metrics.forEach(m => {
                     const s = m.cvssV3_1?.baseScore || m.cvssV3_0?.baseScore || m.cvssV2?.baseScore;
                     if (s > score) score = s;
                 });
 
-                // Exploit Durumu (Python script'imizden geliyor)
+                // 2. CWE & MITRE Mapping
+                let cweHTML = "";
+                const problemTypes = item.containers?.cna?.problemTypes || [];
+                problemTypes.forEach(prob => {
+                    prob.descriptions.forEach(desc => {
+                        const cweMatch = desc.cweId || desc.description?.match(/CWE-\d+/)?.[0];
+                        if (cweMatch) {
+                            const cweIdNum = cweMatch.split('-')[1];
+                            cweHTML += `<a href="https://cwe.mitre.org/data/definitions/${cweIdNum}.html" target="_blank" class="cwe-tag">${cweMatch}</a>`;
+                        }
+                    });
+                });
+
+                // 3. Exploit Kontrolü
                 const isExploited = item.is_exploited || false;
 
                 const card = document.createElement('div');
                 card.className = 'cve-card';
                 if (score >= 7) card.style.borderColor = 'var(--danger)';
-                
+                else if (score >= 4) card.style.borderColor = 'var(--warning)';
+
                 card.innerHTML = `
-                    ${isExploited ? '<div class="exploit-badge">⚠️ AKTİF EXPLOIT EDİLİYOR</div>' : ''}
-                    <div style="display:flex; align-items:center;">
+                    ${isExploited ? '<div class="exploit-badge">⚠️ AKTİF EXPLOIT EDİLDİ</div>' : ''}
+                    <div class="cve-header">
                         <a href="https://nvd.nist.gov/vuln/detail/${cveId}" target="_blank" class="cve-id">${cveId}</a>
-                        <span class="score-badge ${score >= 7 ? 'high' : ''}">CVSS: ${score > 0 ? score : 'N/A'}</span>
+                        <span class="cvss-badge ${score >= 7 ? 'high' : (score >= 4 ? 'medium' : '')}">CVSS: ${score > 0 ? score : 'N/A'}</span>
                     </div>
-                    <div class="desc">${item.containers?.cna?.descriptions?.[0]?.value || 'Açıklama yok.'}</div>
-                    <div style="margin-top:10px;">
-                        <a href="https://www.google.com/search?q=${cveId}+exploit+github+poc" target="_blank" style="font-size:0.8rem; color:var(--exploit); font-weight:bold;">[ PoC Ara 🔍 ]</a>
+                    
+                    <div class="desc">${item.containers?.cna?.descriptions?.[0]?.value || 'Açıklama mevcut değil.'}</div>
+                    
+                    <div style="margin-bottom:15px;">
+                        <small style="display:block; color:#718096; margin-bottom:5px;">Zafiyet Türü & Mapping:</small>
+                        ${cweHTML || '<span class="cwe-tag">CWE Tanımlanmamış</span>'}
+                    </div>
+
+                    <div class="meta-grid">
+                        <div>📅 Yayınlanma: <strong>${item.cveMetadata?.datePublished?.split('T')[0] || '-'}</strong></div>
+                        <div>📊 Durum: <strong>${item.cveMetadata?.state || 'PUBLISHED'}</strong></div>
+                        <div>⚔️ <a href="https://attack.mitre.org/techniques/enterprise/" target="_blank" class="attack-link">MITRE ATT&CK Matrix ↗</a></div>
+                        <div>🔍 <a href="https://www.google.com/search?q=${cveId}+exploit+poc+github" target="_blank" style="color:var(--accent); text-decoration:none;">PoC Ara</a></div>
                     </div>
                 `;
-                container.appendChild(card);
+                listContainer.appendChild(card);
             });
-        } catch (e) { container.innerText = "Hata oluştu."; }
+
+        } catch (err) {
+            statusEl.innerText = "❌ Veri senkronizasyon hatası.";
+            console.error(err);
+        }
     }
-    fetchAll();
+    updateDashboard();
 </script>
 </body>
 </html>
