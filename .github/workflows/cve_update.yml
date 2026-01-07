@@ -1,4 +1,4 @@
-name: Update CVE Data
+name: Update CVE & Exploit Data
 on:
   schedule:
     - cron: '0 */6 * * *'
@@ -11,20 +11,32 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          fetch-depth: 0 # Tüm geçmişi çekerek çakışmaları önler
-
-      - name: Fetch CVE Data
+          python-version: '3.x'
+      - name: Fetch and Merge Data
         run: |
-          curl -s "https://cve.circl.lu/api/last" > data.json
-
+          python -c "
+          import requests, json
+          # 1. Son CVE'leri çek
+          cves = requests.get('https://cve.circl.lu/api/last').json()
+          # 2. CISA KEV (Exploit) listesini çek
+          kev = requests.get('https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json').json()
+          exploited_ids = [v['cveID'] for v in kev['vulnerabilities']]
+          
+          # 3. Veriyi zenginleştir
+          for item in cves:
+              cve_id = item.get('cveMetadata', {}).get('cveId')
+              item['is_exploited'] = cve_id in exploited_ids
+          
+          with open('data.json', 'w') as f:
+              json.dump(cves, f)
+          "
       - name: Commit and Push
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add data.json
-          # Eğer değişiklik yoksa hata vermemesi için:
-          git commit -m "CVE verileri güncellendi" || exit 0
-          # Çakışmaları önlemek için güncel halini çek ve üstüne ekle
-          git pull --rebase origin main
+          git commit -m 'CVE ve Exploit verileri güncellendi' || exit 0
           git push
