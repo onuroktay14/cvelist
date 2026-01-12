@@ -3,80 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aktif CVE ve Exploit Takip Sistemi</title>
+    <title>SOC Dashboard | CVE Tracker</title>
     <style>
         :root { 
-            --primary: #1a202c; --accent: #3182ce; --danger: #e53e3e; 
-            --warning: #dd6b20; --exploit: #805ad5; --success: #38a169; --bg: #f7fafc;
+            --bg: #0f172a; --card-bg: #1e293b; --text: #f8fafc;
+            --accent: #38bdf8; --danger: #ef4444; --warning: #f59e0b; 
+            --exploit: #d946ef; --success: #10b981; --border: #334155;
         }
-        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: #2d3748; padding: 20px; }
-        .container { max-width: 1000px; margin: auto; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
         
-        header { text-align: center; margin-bottom: 25px; border-bottom: 3px solid var(--accent); padding-bottom: 15px; }
+        .container { max-width: 1600px; margin: auto; }
         
-        /* Arama ve Filtre Alanı */
-        .controls { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 25px; text-align: center; }
+        header { text-align: left; margin-bottom: 30px; border-left: 5px solid var(--accent); padding-left: 20px; }
+        header h1 { margin: 0; font-size: 1.8rem; letter-spacing: -1px; }
+        #status { font-size: 0.85rem; color: #94a3b8; margin-top: 5px; }
+
+        /* Arama ve Filtreler */
+        .controls { 
+            display: flex; flex-wrap: wrap; gap: 15px; align-items: center; 
+            background: var(--card-bg); padding: 15px; border-radius: 12px; margin-bottom: 30px; border: 1px solid var(--border);
+        }
         #search-input { 
-            width: 90%; max-width: 500px; padding: 12px 20px; border-radius: 25px; 
-            border: 2px solid #e2e8f0; font-size: 1rem; margin-bottom: 15px; outline: none;
+            flex: 1; min-width: 250px; background: #0f172a; border: 1px solid var(--border); 
+            padding: 10px 20px; border-radius: 8px; color: white; outline: none;
         }
-        
-        .filter-group { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 10px; }
+        .filter-group { display: flex; gap: 8px; flex-wrap: wrap; }
         .btn-filter { 
-            padding: 8px 16px; border-radius: 20px; border: 1px solid #cbd5e0; 
-            background: white; cursor: pointer; font-weight: 600; font-size: 0.85rem; 
-            transition: 0.2s; color: #4a5568;
+            padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border); 
+            background: #334155; color: #cbd5e1; cursor: pointer; font-size: 0.8rem; font-weight: 600;
         }
-        .btn-filter:hover { background: #edf2f7; }
-        .btn-filter.active { background: var(--accent); color: white; border-color: var(--accent); }
-        .btn-exploited.active { background: var(--exploit); border-color: var(--exploit); }
-        .btn-critical.active { background: var(--danger); border-color: var(--danger); }
+        .btn-filter.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
 
-        #status { font-weight: 600; font-size: 0.9rem; color: #718096; margin-top: 15px; }
+        /* Dashboard Grid Yapısı (Yan yana dizilim) */
+        #cve-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+            gap: 20px; 
+        }
 
-        /* Kart Yapısı */
+        /* Küçük Renkli Kutucuklar (Cards) */
         .cve-card { 
-            background: white; border-radius: 12px; padding: 25px; margin-bottom: 20px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 8px solid #cbd5e0; 
-            position: relative; transition: 0.2s;
+            background: var(--card-bg); border-radius: 12px; padding: 18px; 
+            border: 1px solid var(--border); display: flex; flex-direction: column;
+            position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden; min-height: 220px;
         }
-        .exploit-badge { 
-            position: absolute; top: -12px; right: 20px; background: var(--exploit); 
-            color: white; padding: 6px 14px; border-radius: 8px; font-weight: 900; 
-            font-size: 0.75rem; animation: pulse 2s infinite; border: 2px solid white;
-        }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        .cve-card:hover { transform: translateY(-5px); border-color: var(--accent); box-shadow: 0 10px 20px -10px rgba(56, 189, 248, 0.3); }
 
-        .cve-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .cve-id { font-size: 1.3rem; font-weight: 800; color: var(--accent); text-decoration: none; }
+        /* Kritiklik Renkleri */
+        .cve-card.critical { border-top: 4px solid var(--danger); }
+        .cve-card.high { border-top: 4px solid var(--warning); }
+        .cve-card.medium { border-top: 4px solid var(--accent); }
+
+        .exploit-indicator { 
+            position: absolute; top: 0; right: 0; background: var(--exploit); 
+            color: white; font-size: 0.65rem; padding: 4px 8px; font-weight: 900;
+            border-bottom-left-radius: 8px; animation: blink 1.5s infinite;
+        }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        .cve-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .cve-id { font-weight: 800; font-size: 1.1rem; color: var(--accent); text-decoration: none; }
         
-        .cvss-badge { padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; background: #edf2f7; }
-        .high-score { background: var(--danger); color: white; }
+        .cvss-box { 
+            background: #334155; padding: 4px 8px; border-radius: 6px; 
+            font-size: 0.8rem; font-weight: bold; color: var(--text);
+        }
+        .score-red { color: var(--danger); }
 
-        .desc { font-size: 0.95rem; color: #4a5568; background: #f8fafc; padding: 12px; border-radius: 8px; margin: 12px 0; border: 1px solid #e2e8f0; }
-        .product-tag { background: #e2e8f0; color: #2d3748; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; margin-right: 5px; font-weight: bold; }
-        .cwe-tag { display: inline-block; background: #ebf8ff; color: #2b6cb0; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; margin-right: 5px; text-decoration: none; font-weight: bold; border: 1px solid #bee3f8; }
+        .product-info { font-size: 0.75rem; color: #94a3b8; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; }
+        
+        .desc { 
+            font-size: 0.85rem; color: #cbd5e1; line-height: 1.4; 
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; 
+            overflow: hidden; margin-bottom: 15px; flex-grow: 1;
+        }
 
-        .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; font-size: 0.75rem; color: #718096; margin-top: 15px; padding-top: 15px; border-top: 1px solid #edf2f7; }
-        .attack-link { color: var(--exploit); font-weight: 800; text-decoration: none; }
+        .meta-footer { 
+            display: flex; justify-content: space-between; align-items: center; 
+            font-size: 0.7rem; border-top: 1px solid var(--border); pt: 10px; margin-top: auto; padding-top: 10px;
+        }
+        .mapping-links a { color: var(--success); text-decoration: none; font-weight: bold; margin-right: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>Aktif CVE & Exploit Takip Sistemi</h1>
+        <h1>VULNERABILITY DASHBOARD</h1>
+        <div id="status">Sistem taranıyor...</div>
     </header>
 
     <div class="controls">
-        <input type="text" id="search-input" placeholder="Ürün, Plugin veya CVE arayın...">
+        <input type="text" id="search-input" placeholder="Ürün, firma veya CVE kodu ara...">
         <div class="filter-group">
-            <button class="btn-filter active" onclick="setFilter('all', this)">Hepsi</button>
-            <button class="btn-filter btn-exploited" onclick="setFilter('exploited', this)">⚠️ Exploit Edilenler</button>
-            <button class="btn-filter btn-critical" onclick="setFilter('critical', this)">🔥 Kritik (9.0+)</button>
-            <button class="btn-filter" onclick="setFilter('high', this)">🔴 Yüksek (7.0+)</button>
+            <button class="btn-filter active" onclick="setFilter('all', this)">TÜMÜ</button>
+            <button class="btn-filter" onclick="setFilter('exploited', this)">EXPLOITED</button>
+            <button class="btn-filter" onclick="setFilter('critical', this)">CRITICAL</button>
         </div>
-        <div id="status">Veriler yükleniyor...</div>
     </div>
 
     <div id="cve-list"></div>
@@ -84,96 +109,87 @@
 
 <script>
     let allCVEs = [];
-    let currentFilter = 'all';
+    let filter = 'all';
 
     async function init() {
         try {
             const res = await fetch('./data.json?t=' + Date.now());
             allCVEs = await res.json();
-            // Varsayılan olarak puanı yüksek olanları en üste alalım
-            allCVEs.sort((a, b) => calculateScore(b) - calculateScore(a));
-            applyFilters();
-
-            document.getElementById('search-input').addEventListener('input', applyFilters);
-        } catch (e) { document.getElementById('status').innerText = "Veri hatası."; }
+            // Puanına göre sırala
+            allCVEs.sort((a, b) => getScore(b) - getScore(a));
+            apply();
+            
+            document.getElementById('search-input').addEventListener('input', apply);
+        } catch (e) { document.getElementById('status').innerText = "Veri yüklenemedi."; }
     }
 
-    function calculateScore(item) {
-        let score = 0;
+    function getScore(item) {
+        let max = 0;
         const metrics = [...(item.containers?.cna?.metrics || []), ...(item.containers?.adp?.[0]?.metrics || [])];
         metrics.forEach(m => {
             const s = m.cvssV3_1?.baseScore || m.cvssV3_0?.baseScore || m.cvssV2?.baseScore || 0;
-            if (s > score) score = s;
+            if (s > max) max = s;
         });
-        return score;
+        return max;
     }
 
-    function setFilter(filter, el) {
-        currentFilter = filter;
-        document.querySelectorAll('.btn-filter').forEach(btn => btn.classList.remove('active'));
+    function setFilter(f, el) {
+        filter = f;
+        document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
-        applyFilters();
+        apply();
     }
 
-    function applyFilters() {
+    function apply() {
         const term = document.getElementById('search-input').value.toLowerCase();
-        
         const filtered = allCVEs.filter(item => {
-            const score = calculateScore(item);
-            const isExploited = item.is_exploited || false;
+            const score = getScore(item);
+            const isExp = item.is_exploited || false;
             const textMatch = (item.containers?.cna?.descriptions?.[0]?.value || "").toLowerCase().includes(term) ||
                               (item.cveMetadata?.cveId || "").toLowerCase().includes(term) ||
                               (item.containers?.cna?.affected || []).some(p => (p.product || "").toLowerCase().includes(term));
-
-            let categoryMatch = true;
-            if (currentFilter === 'exploited') categoryMatch = isExploited;
-            if (currentFilter === 'critical') categoryMatch = score >= 9.0;
-            if (currentFilter === 'high') categoryMatch = score >= 7.0;
-
-            return textMatch && categoryMatch;
+            
+            if (filter === 'exploited') return isExp && textMatch;
+            if (filter === 'critical') return score >= 9.0 && textMatch;
+            return textMatch;
         });
-
         render(filtered);
     }
 
     function render(data) {
         const container = document.getElementById('cve-list');
-        document.getElementById('status').innerText = `✅ ${data.length} sonuç listeleniyor.`;
+        // SON 100 KAYIT SINIRI
+        const displayData = data.slice(0, 100);
+        document.getElementById('status').innerText = `SON 100 ANALİZ İÇİNDEN ${displayData.length} KAYIT LİSTELENİYOR`;
         container.innerHTML = '';
 
-        data.slice(0, 40).forEach(item => {
-            const score = calculateScore(item);
-            const cveId = item.cveMetadata?.cveId || "ID Yok";
-            const products = (item.containers?.cna?.affected || []).map(p => `<span class="product-tag">${p.product || 'Ürün Bilgisi Yok'}</span>`).join("");
-            
-            let cweHTML = "";
-            (item.containers?.cna?.problemTypes || []).forEach(prob => {
-                prob.descriptions.forEach(desc => {
-                    const cweMatch = desc.cweId || desc.description?.match(/CWE-\d+/)?.[0];
-                    if (cweMatch) {
-                        cweHTML += `<a href="https://cwe.mitre.org/data/definitions/${cweMatch.split('-')[1]}.html" target="_blank" class="cwe-tag">${cweMatch}</a>`;
-                    }
-                });
-            });
+        displayData.forEach(item => {
+            const score = getScore(item);
+            const cveId = item.cveMetadata?.cveId || "N/A";
+            const product = item.containers?.cna?.affected?.[0]?.product || "Bilinmiyor";
+            const isExploited = item.is_exploited || false;
+
+            let levelClass = '';
+            if (score >= 9) levelClass = 'critical';
+            else if (score >= 7) levelClass = 'high';
+            else if (score >= 4) levelClass = 'medium';
 
             const card = document.createElement('div');
-            card.className = 'cve-card';
-            if (score >= 7) card.style.borderColor = 'var(--danger)';
-
+            card.className = `cve-card ${levelClass}`;
             card.innerHTML = `
-                ${item.is_exploited ? '<div class="exploit-badge">⚠️ AKTİF EXPLOIT EDİLDİ</div>' : ''}
+                ${isExploited ? '<div class="exploit-indicator">EXPLOIT ACTIVE</div>' : ''}
                 <div class="cve-header">
                     <a href="https://nvd.nist.gov/vuln/detail/${cveId}" target="_blank" class="cve-id">${cveId}</a>
-                    <span class="cvss-badge ${score >= 7 ? 'high-score' : ''}">CVSS: ${score > 0 ? score.toFixed(1) : 'N/A'}</span>
+                    <div class="cvss-box ${score >= 9 ? 'score-red' : ''}">${score > 0 ? score.toFixed(1) : 'N/A'}</div>
                 </div>
-                <div style="margin-bottom:8px;">${products}</div>
-                <div class="desc">${item.containers?.cna?.descriptions?.[0]?.value || 'Açıklama yok.'}</div>
-                <div>${cweHTML || '<span class="cwe-tag">CWE Belirtilmemiş</span>'}</div>
-                <div class="meta-grid">
-                    <div>📅 Tarih: <strong>${item.cveMetadata?.datePublished?.split('T')[0] || '-'}</strong></div>
-                    <div>📊 Durum: <strong>${item.cveMetadata?.state || 'PUBLISHED'}</strong></div>
-                    <div>⚔️ <a href="https://attack.mitre.org/techniques/enterprise/" target="_blank" class="attack-link">MITRE Mapping ↗</a></div>
-                    <div>🔍 <a href="https://www.google.com/search?q=${cveId}+exploit+poc+github" target="_blank" style="color:var(--accent); text-decoration:none;">PoC Ara</a></div>
+                <div class="product-info">${product}</div>
+                <div class="desc">${item.containers?.cna?.descriptions?.[0]?.value || 'Detay yok.'}</div>
+                <div class="meta-footer">
+                    <div class="mapping-links">
+                        <a href="https://attack.mitre.org/search/?search=${product}" target="_blank">⚔️ MITRE</a>
+                        <a href="https://www.google.com/search?q=${cveId}+poc+github" target="_blank">🔍 PoC</a>
+                    </div>
+                    <span>${item.cveMetadata?.datePublished?.split('T')[0] || '-'}</span>
                 </div>
             `;
             container.appendChild(card);
