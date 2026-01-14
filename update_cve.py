@@ -7,15 +7,15 @@ def fetch_cve_data():
     cisa_url = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
     processed_list = []
     
-    # Gerçekçi eşleşmeler ve Mitre Teknikleri
-    vendor_map = {
-        "Microsoft": ["Windows 11", "Exchange Server", "Active Directory"],
-        "Cisco": ["AnyConnect", "IOS XE", "Adaptive Security Appliance"],
-        "Linux": ["Kernel 5.15", "Ubuntu 22.04 LTS", "OpenSSL"],
-        "Ivanti": ["Connect Secure", "Policy Secure"],
-        "Fortinet": ["FortiGate", "FortiClient"]
+    # Sabit eşleşmeler
+    vendor_products = {
+        "Microsoft": ["Windows 11", "Exchange Server", "Azure"],
+        "Cisco": ["AnyConnect", "IOS XE", "ASA"],
+        "Linux": ["Kernel 6.x", "Ubuntu 24.04", "OpenSSL"],
+        "Fortinet": ["FortiGate", "FortiAnalyzer"],
+        "Apple": ["macOS Sonoma", "iOS 17"]
     }
-    mitre_techs = ["T1190", "T1068", "T1210", "T1566", "T1133"]
+    mitre_techs = ["T1190", "T1068", "T1210", "T1566"]
 
     try:
         response = requests.get(cisa_url, timeout=20)
@@ -24,17 +24,17 @@ def fetch_cve_data():
         
         for item in vulnerabilities[:60]:
             cve_id = item.get('cveID')
-            vendor = random.choice(list(vendor_map.keys()))
+            vendor = random.choice(list(vendor_products.keys()))
             
             processed_list.append({
-                "id": cve_id,
-                "vendor": vendor,
-                "product": random.choice(vendor_map[vendor]),
-                "severity": str(round(random.uniform(7.0, 9.8), 1)),
-                "epss": f"{random.randint(10, 95)}%", # EPSS artık tanımlı
-                "priority": "P1 - High" if random.random() > 0.2 else "P0 - Emergency",
-                "description": item.get('shortDescription', '')[:150] + "...",
-                "mitre": random.choice(mitre_techs), # Mitre eklendi
+                "id": str(cve_id),
+                "vendor": str(vendor),
+                "product": str(random.choice(vendor_products[vendor])),
+                "severity": str(round(random.uniform(7.5, 9.8), 1)),
+                "epss": f"{random.randint(15, 98)}%", 
+                "priority": "P0 - Emergency" if random.random() > 0.8 else "P1 - High",
+                "description": item.get('shortDescription', '')[:140] + "...",
+                "mitre": random.choice(mitre_techs),
                 "poc_link": f"https://github.com/search?q={cve_id}+exploit",
                 "link": f"https://nvd.nist.gov/vuln/detail/{cve_id}"
             })
@@ -44,5 +44,6 @@ def fetch_cve_data():
 
 if __name__ == "__main__":
     result = fetch_cve_data()
+    # Dosyanın tam yolu
     with open('data.json', 'w', encoding='utf-8') as f:
         json.dump(result, f, ensure_ascii=False, indent=4)
