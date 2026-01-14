@@ -3,83 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CVE Priority Dashboard</title>
+    <title>CVE Dashboard - Debug Mode</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f4f7f9; }
-        .priority-P0 { background-color: #ff4d4d !important; animation: pulse 2s infinite; }
-        .priority-P1 { background-color: #ff8c1a !important; }
-        .priority-P2 { background-color: #ffd11a !important; color: #000 !important; }
-        .priority-P3 { background-color: #33ccff !important; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
-        .card { border: none; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        body { background-color: #f8f9fa; padding: 20px; }
+        .priority-P0 { background-color: #dc3545 !important; color: white; animation: blinker 1.5s linear infinite; }
+        .priority-P1 { background-color: #fd7e14 !important; color: white; }
+        .priority-P2 { background-color: #ffc107 !important; color: black; }
+        .priority-P3 { background-color: #0dcaf0 !important; color: white; }
+        @keyframes blinker { 50% { opacity: 0.5; } }
+        .debug-box { font-size: 12px; background: #eee; padding: 10px; border-radius: 5px; margin-bottom: 20px; border-left: 5px solid #333; }
     </style>
 </head>
 <body>
-<div class="container py-5">
-    <div class="card p-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="fw-bold text-primary">CVE Priority List</h2>
-            <input type="text" id="searchInput" class="form-control w-25" placeholder="CVE veya marka ara...">
-        </div>
-        
-        <div class="table-responsive">
-            <table class="table align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>CVE ID</th>
-                        <th>Öncelik</th>
-                        <th>CVSS</th>
-                        <th>Açıklama</th>
-                        <th>İşlem</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    <tr><td colspan="5" class="text-center">Veriler yükleniyor...</td></tr>
-                </tbody>
-            </table>
-        </div>
+
+<div class="container">
+    <h2 class="mb-4">🛡️ CVE Priority Dashboard</h2>
+    
+    <div id="debugInfo" class="debug-box">Sistem durumu kontrol ediliyor...</div>
+
+    <div class="table-responsive bg-white p-3 rounded shadow-sm">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>CVE ID</th>
+                    <th>Öncelik</th>
+                    <th>CVSS</th>
+                    <th>Açıklama</th>
+                    <th>Link</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="5" class="text-center text-muted">Veriler yükleniyor...</td></tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
 <script>
-    async function fetchData() {
+    async function loadData() {
+        const debug = document.getElementById('debugInfo');
+        const tableBody = document.getElementById('tableBody');
+        
         try {
-            // Cache kırmak için zaman damgası ekliyoruz
-            const res = await fetch('data.json?t=' + Date.now());
-            const data = await res.json();
-            const tableBody = document.getElementById('tableBody');
+            // Cache kırmak için her seferinde yeni bir istek yapıyoruz
+            const url = 'data.json?v=' + new Date().getTime();
+            debug.innerText = `İstek atılıyor: ${url}`;
             
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP Hatası! Statu: ${response.status}`);
+            }
+
+            const data = await response.json();
+            debug.innerText = `Bağlantı Başarılı! Toplam Veri Sayısı: ${data.length}`;
+
             if (data.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-warning">Şu an gösterilecek yeni veri yok.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-warning">data.json dosyası boş (0 kayıt).</td></tr>';
                 return;
             }
 
-            function displayData(filterText = '') {
-                tableBody.innerHTML = '';
-                data.filter(item => item.id.toLowerCase().includes(filterText.toLowerCase()) || 
-                                    item.description.toLowerCase().includes(filterText.toLowerCase()))
-                .forEach(item => {
-                    const row = `
-                        <tr>
-                            <td class="fw-bold">${item.id}</td>
-                            <td><span class="badge priority-${item.priority.split(' ')[0]} p-2">${item.priority}</span></td>
-                            <td><span class="badge bg-dark">${item.severity}</span></td>
-                            <td class="small text-muted">${item.description}</td>
-                            <td><a href="${item.link}" target="_blank" class="btn btn-sm btn-outline-primary">Detay</a></td>
-                        </tr>`;
-                    tableBody.innerHTML += row;
-                });
-            }
+            tableBody.innerHTML = '';
+            data.forEach(item => {
+                const priorityClass = item.priority ? item.priority.split(' ')[0] : 'P3';
+                const row = `
+                    <tr>
+                        <td class="fw-bold text-primary">${item.id}</td>
+                        <td><span class="badge priority-${priorityClass}">${item.priority}</span></td>
+                        <td><strong>${item.severity}</strong></td>
+                        <td class="small text-secondary">${item.description}</td>
+                        <td><a href="${item.link}" target="_blank" class="btn btn-sm btn-outline-dark">Git</a></td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
 
-            displayData();
-            document.getElementById('searchInput').addEventListener('input', (e) => displayData(e.target.value));
-
-        } catch (err) {
-            document.getElementById('tableBody').innerHTML = '<tr><td colspan="5" class="text-center text-danger">Veri çekilemedi. Lütfen daha sonra tekrar deneyin.</td></tr>';
+        } catch (error) {
+            debug.innerText = `Hata Oluştu: ${error.message}`;
+            tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Hata: ${error.message} <br> Lütfen data.json dosyasının varlığını ve formatını kontrol edin.</td></tr>`;
         }
     }
-    fetchData();
+
+    // Başlat
+    loadData();
 </script>
 </body>
 </html>
