@@ -13,8 +13,10 @@
             --border: #30363d; 
         }
         
-        body { background: var(--bg); color: #adbac7; font-family: 'Inter', sans-serif; min-height: 100vh; }
+        body { background: var(--bg); color: #adbac7; font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+        .container { flex: 1; }
         
+        /* Paneller */
         .info-panel {
             background: rgba(88, 166, 255, 0.05);
             border: 1px solid rgba(88, 166, 255, 0.2);
@@ -27,31 +29,41 @@
         .main-console { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 25px; }
         .search-box { background: #010409; border: 1px solid var(--border); color: white; border-radius: 8px; padding: 10px 15px; width: 100%; }
 
+        /* Tablo ve Butonlar */
         .table { --bs-table-bg: transparent; --bs-table-color: #adbac7; border-collapse: separate; border-spacing: 0 10px; }
         .table thead th { color: var(--neon); border: none; font-size: 0.75rem; text-transform: uppercase; }
         .table tbody tr { background: #161b22; border: 1px solid var(--border); transition: 0.2s; }
         .table tbody tr:hover { background: #1c2128; border-color: var(--neon); }
         .table td { border: none; padding: 12px !important; }
 
-        /* Buton Grubu Tasarımı */
         .btn-action { width: 100%; font-weight: bold; border-radius: 6px; padding: 6px 12px; font-size: 0.8rem; margin-bottom: 5px; transition: 0.3s; display: block; text-align: center; text-decoration: none; }
-        
         .ai-btn { background: #8957e5; color: white; border: none; }
         .ai-btn:hover { background: #a371f7; box-shadow: 0 0 10px rgba(137, 87, 229, 0.4); }
-        
         .detail-btn { background: transparent; color: var(--neon); border: 1px solid var(--neon); }
-        .detail-btn:hover { background: rgba(88, 166, 255, 0.1); }
-        
         .poc-btn { background: transparent; color: #adbac7; border: 1px solid var(--border); }
-        .poc-btn:hover { border-color: #fff; color: #fff; }
 
         .p-P0 { background: #da3633; color: white; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.7rem; }
         .p-P1 { background: #bc4c00; color: white; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.7rem; }
         .export-btn { background: #238636; color: white; border: none; font-weight: bold; border-radius: 6px; }
 
-        /* NVD Link Badge */
-        .nvd-link { font-size: 10px; color: var(--neon); opacity: 0.7; text-decoration: none; }
-        .nvd-link:hover { opacity: 1; text-decoration: underline; }
+        /* Footer Stili */
+        footer {
+            background: #0d1117;
+            border-top: 1px solid var(--border);
+            padding: 20px 0;
+            margin-top: 50px;
+            text-align: center;
+        }
+        footer a {
+            color: var(--neon);
+            text-decoration: none;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+        footer a:hover {
+            color: #fff;
+            text-shadow: 0 0 10px var(--neon);
+        }
     </style>
 </head>
 <body>
@@ -107,6 +119,14 @@
     </div>
 </div>
 
+<footer>
+    <div class="container">
+        <p class="mb-0 small opacity-70">
+            Bu araç <a href="https://www.linkedin.com/in/onuroktaycom/" target="_blank"><i class="fab fa-linkedin me-1"></i>Onur Oktay</a> tarafından geliştirilmiştir.
+        </p>
+    </div>
+</footer>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     let raw = [];
@@ -160,9 +180,9 @@
         document.getElementById('modalBody').innerHTML = `
             <div class="bg-black p-3 rounded mb-3 small border border-secondary">${desc}</div>
             <h6 class="text-success fw-bold small mb-3">KAPATMA ADIMLARI:</h6>
-            <div class="mb-2 p-2 border-start border-info bg-dark small shadow-sm"><b>1. Yama Yönetimi:</b> ${v} resmi yamasını ivedilikle test ortamında doğrulayıp canlıya alın.</div>
-            <div class="mb-2 p-2 border-start border-info bg-dark small shadow-sm"><b>2. İzolasyon:</b> Etkilenen ${p} servisini geçici olarak kısıtlı bir ağ segmentine (VLAN) taşıyın.</div>
-            <div class="mb-2 p-2 border-start border-info bg-dark small shadow-sm"><b>3. Tehdit Avcılığı:</b> Loglarda yetkisiz komut çalıştırma (RCE) izlerini tarayın.</div>
+            <div class="mb-2 p-2 border-start border-info bg-dark small"><b>1. Yama Yönetimi:</b> ${v} resmi yamasını ivedilikle test ortamında doğrulayıp canlıya alın.</div>
+            <div class="mb-2 p-2 border-start border-info bg-dark small"><b>2. İzolasyon:</b> Etkilenen ${p} servisini geçici olarak kısıtlı bir ağ segmentine taşıyın.</div>
+            <div class="mb-2 p-2 border-start border-info bg-dark small"><b>3. Tehdit Avcılığı:</b> Loglarda yetkisiz komut çalıştırma izlerini tarayın.</div>
         `;
         new bootstrap.Modal(document.getElementById('commonModal')).show();
     }
@@ -175,7 +195,6 @@
                 <p class="small">${desc}</p>
             </div>
             <div class="text-center p-4 border border-dashed border-secondary rounded">
-                <p class="small mb-3">Zafiyetin tam teknik dökümanı, etkilenen versiyon listesi ve resmi referanslar için NVD sayfasını ziyaret edin.</p>
                 <a href="${link}" target="_blank" class="btn btn-primary px-4">NVD Kaynağına Git <i class="fas fa-external-link-alt ms-2"></i></a>
             </div>
         `;
@@ -191,7 +210,7 @@
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `CVE_Siber_Istihbarat_Raporu_${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `CVE_Raporu_OnurOktay_${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
     }
     init();
