@@ -3,126 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CVE Priority Dashboard</title>
+    <title>CVE & Exploit Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f4f7f9; font-family: 'Segoe UI', sans-serif; }
-        .priority-P0 { background-color: #ff4d4d !important; color: white; animation: pulse 2s infinite; }
-        .priority-P1 { background-color: #ff8c1a !important; color: white; }
-        .priority-P2 { background-color: #ffd11a !important; color: #000 !important; }
-        .priority-P3 { background-color: #33ccff !important; color: white; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
-        .card { border: none; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
-        .debug-status { font-size: 0.75rem; color: #6c757d; margin-top: 10px; }
+        body { background-color: #f0f2f5; font-family: 'Inter', sans-serif; }
+        .priority-P0 { background-color: #ff4d4d !important; color: white; font-weight: bold; }
+        .priority-P1 { background-color: #ffa500 !important; color: white; }
+        .badge-mitre { background-color: #6f42c1; color: white; font-size: 0.75rem; }
+        .badge-exploit { border: 1px solid #dc3545; color: #dc3545; font-size: 0.75rem; }
+        .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
     </style>
 </head>
 <body>
 
-<div class="container py-5">
+<div class="container-fluid py-5 px-4">
     <div class="card p-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h2 class="fw-bold text-primary mb-0">🛡️ CVE Priority List</h2>
-                <div id="debugStatus" class="debug-status">Veri kaynağı kontrol ediliyor...</div>
-            </div>
-            <input type="text" id="searchInput" class="form-control w-25" placeholder="CVE ID veya açıklama ara...">
+            <h2 class="fw-bold">Advanced CVE & Exploit Intelligence</h2>
+            <input type="text" id="searchInput" class="form-control w-25" placeholder="CVE veya Teknik Ara...">
         </div>
-        
+
         <div class="table-responsive">
-            <table class="table align-middle table-hover">
-                <thead class="table-light">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
                     <tr>
                         <th>CVE ID</th>
                         <th>Öncelik</th>
-                        <th>CVSS Puanı</th>
+                        <th>Puan</th>
+                        <th>MITRE ATT&CK</th>
+                        <th>Exploit / PoC</th>
                         <th>Açıklama</th>
                         <th>İşlem</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr><td colspan="5" class="text-center text-muted">Veriler yükleniyor...</td></tr>
-                </tbody>
+                    </tbody>
             </table>
         </div>
     </div>
 </div>
 
 <script>
-    async function fetchData() {
-        const debugStatus = document.getElementById('debugStatus');
-        const tableBody = document.getElementById('tableBody');
-        const searchInput = document.getElementById('searchInput');
-
+    async function loadDashboard() {
         try {
-            // Cache kırmak için zaman damgası (v=...) ekliyoruz
-            const response = await fetch('data.json?v=' + Date.now());
-            
-            if (!response.ok) throw new Error('data.json dosyasına erişilemedi.');
-            
-            const data = await response.json();
-            debugStatus.innerText = `Son başarılı senkronizasyon: ${new Date().toLocaleTimeString()} | Toplam: ${data.length} kayıt`;
+            const res = await fetch('data.json?v=' + Date.now());
+            const data = await res.json();
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
 
-            if (data.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-warning">data.json dosyası şu an boş []. GitHub Action çalışıyor olabilir.</td></tr>';
-                return;
-            }
-
-            function displayData(filterText = '') {
-                tableBody.innerHTML = '';
-                
-                const filtered = data.filter(item => 
-                    item.id.toLowerCase().includes(filterText.toLowerCase()) || 
-                    item.description.toLowerCase().includes(filterText.toLowerCase())
-                );
-
-                if (filtered.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Aramanızla eşleşen sonuç bulunamadı.</td></tr>';
-                    return;
-                }
-
-                filtered.forEach(item => {
-                    const priorityKey = item.priority ? item.priority.split(' ')[0] : 'P3';
-                    const row = `
-                        <tr>
-                            <td class="fw-bold text-dark">${item.id}</td>
-                            <td>
-                                <span class="badge priority-${priorityKey} p-2 shadow-sm">
-                                    ${item.priority || 'P3 - Low'}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge bg-dark">
-                                    ${item.severity || 'N/A'}
-                                </span>
-                            </td>
-                            <td class="small text-secondary" style="max-width: 400px;">
-                                ${item.description}
-                            </td>
-                            <td>
-                                <a href="${item.link}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                                    Detay
-                                </a>
-                            </td>
-                        </tr>`;
-                    tableBody.innerHTML += row;
-                });
-            }
-
-            // İlk yükleme
-            displayData();
-
-            // Arama dinleyicisi
-            searchInput.addEventListener('input', (e) => displayData(e.target.value));
-
-        } catch (err) {
-            debugStatus.innerText = 'Hata: Veri çekilemedi.';
-            tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Veri yükleme hatası: ${err.message}</td></tr>`;
+            data.forEach(item => {
+                const pClass = item.priority ? item.priority.split(' ')[0] : 'P3';
+                const row = `
+                    <tr>
+                        <td class="fw-bold">${item.id}</td>
+                        <td><span class="badge priority-${pClass}">${item.priority}</span></td>
+                        <td><span class="badge bg-secondary">${item.severity}</span></td>
+                        <td><span class="badge badge-mitre">${item.mitre || 'T1210'}</span></td>
+                        <td>
+                            <a href="${item.poc_link}" target="_blank" class="badge badge-exploit text-decoration-none">
+                                🔍 PoC Ara
+                            </a>
+                        </td>
+                        <td class="small text-muted">${item.description}</td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="${item.link}" target="_blank" class="btn btn-sm btn-primary">NIST</a>
+                            </div>
+                        </td>
+                    </tr>`;
+                tableBody.innerHTML += row;
+            });
+        } catch (e) {
+            console.error(e);
         }
     }
-
-    // Sayfa yüklendiğinde çalıştır
-    fetchData();
+    loadDashboard();
 </script>
-
 </body>
 </html>
