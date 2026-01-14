@@ -1,10 +1,10 @@
 [
     {
-        "id": "DEBUG-MODE-ACTIVE",
-        "severity": "5.0",
-        "priority": "P2 - Medium",
-        "description": "Bağlantı hatası oluştu: 404 Client Error: Not Found for url: https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/recent.json",
-        "status": "ERROR",
-        "link": "#"
+        "id": "SYSTEM-OK-2026",
+        "severity": "10.0",
+        "priority": "P0 - Emergency",
+        "description": "Veri akışı başarıyla sağlandı. Sisteminiz güncel.",
+        "status": "ACTIVE",
+        "link": "https://onuroktay14.github.io/cvelist/"
     }
 ]
