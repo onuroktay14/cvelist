@@ -3,127 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced CVE Intelligence Dashboard</title>
+    <title>Enterprise CVE Intelligence</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f0f2f5; font-family: 'Inter', sans-serif; }
-        .priority-P0 { background-color: #dc3545 !important; color: white; font-weight: bold; }
-        .priority-P1 { background-color: #fd7e14 !important; color: white; }
-        .priority-P2 { background-color: #ffc107 !important; color: black; }
-        .priority-P3 { background-color: #0dcaf0 !important; color: white; }
-        
-        /* Summary Cards Style */
-        .stat-card { border: none; border-radius: 15px; transition: transform 0.3s; }
-        .stat-card:hover { transform: translateY(-5px); }
-        .card-icon { font-size: 2rem; opacity: 0.3; position: absolute; right: 15px; top: 15px; }
-        
-        .badge-mitre { background-color: #6610f2; color: white; font-size: 0.8rem; }
-        .badge-poc { border: 1px solid #198754; color: #198754; font-size: 0.8rem; text-decoration: none; }
-        .badge-poc:hover { background-color: #198754; color: white; }
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; }
+        .stat-card { border-radius: 12px; border: none; color: white; transition: 0.3s; }
+        .stat-card:hover { opacity: 0.9; cursor: pointer; }
+        .priority-P0 { background: #d9534f !important; }
+        .badge-vendor { background: #e9ecef; color: #495057; font-weight: 600; border: 1px solid #dee2e6; }
+        .badge-epss { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .table { background: white; border-radius: 10px; overflow: hidden; }
     </style>
 </head>
 <body>
 
 <div class="container-fluid py-4 px-5">
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card stat-card bg-primary text-white p-3 shadow-sm">
-                <div class="card-body">
-                    <h6 class="text-uppercase small fw-bold">Toplam Zafiyet</h6>
-                    <h2 id="totalCount" class="display-6 fw-bold">0</h2>
-                    <div class="card-icon">📊</div>
-                </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark">Cyber Threat Intelligence Console</h2>
+        <button onclick="exportToCSV()" class="btn btn-success shadow-sm">📥 Verileri CSV Olarak İndir</button>
+    </div>
+
+    <div class="row mb-4" id="statsRow">
+        <div class="col-md-3">
+            <div class="card stat-card bg-dark p-3 shadow-sm">
+                <h6>Toplam İzlenen</h6>
+                <h3 id="totalCount">0</h3>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card stat-card bg-danger text-white p-3 shadow-sm">
-                <div class="card-body">
-                    <h6 class="text-uppercase small fw-bold">Kritik (P0) Aciliyet</h6>
-                    <h2 id="criticalCount" class="display-6 fw-bold">0</h2>
-                    <div class="card-icon">🔥</div>
-                </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-danger p-3 shadow-sm">
+                <h6>Acil Müdahale (P0)</h6>
+                <h3 id="criticalCount">0</h3>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card stat-card bg-success text-white p-3 shadow-sm">
-                <div class="card-body">
-                    <h6 class="text-uppercase small fw-bold">PoC / Exploit Mevcut</h6>
-                    <h2 id="pocCount" class="display-6 fw-bold">0</h2>
-                    <div class="card-icon">🛡️</div>
-                </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-warning text-dark p-3 shadow-sm">
+                <h6>Yüksek EPSS (>%80)</h6>
+                <h3 id="epssCount">0</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-info p-3 shadow-sm">
+                <h6>Aktif Sömürülen</h6>
+                <h3 id="exploitCount">0</h3>
             </div>
         </div>
     </div>
 
-    <div class="card shadow-sm border-0 rounded-4 p-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="fw-bold text-dark mb-0">🛡️ CVE Intelligence Feed</h2>
-            <input type="text" id="searchInput" class="form-control w-25" placeholder="CVE veya Teknik Ara...">
-        </div>
-
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th>CVE ID</th>
-                        <th>Öncelik</th>
-                        <th>Puan</th>
-                        <th>MITRE ATT&CK</th>
-                        <th>Exploit / PoC</th>
-                        <th>Açıklama</th>
-                        <th>İşlem</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    <tr><td colspan="7" class="text-center">Veriler senkronize ediliyor...</td></tr>
-                </tbody>
-            </table>
-        </div>
+    <div class="card border-0 shadow-sm p-3">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>CVE ID & Marka</th>
+                    <th>Öncelik</th>
+                    <th>CVSS / EPSS</th>
+                    <th>MITRE Tekniği</th>
+                    <th>Açıklama</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
     </div>
 </div>
 
 <script>
-    async function loadData() {
-        try {
-            const res = await fetch('data.json?v=' + Date.now());
-            const data = await res.json();
-            const tableBody = document.getElementById('tableBody');
-            
-            // İstatistikleri Hesapla
-            document.getElementById('totalCount').innerText = data.length;
-            const criticals = data.filter(item => item.priority && item.priority.includes('P0')).length;
-            document.getElementById('criticalCount').innerText = criticals;
-            const pocs = data.length > 0 ? data.length : 0; // Bu örnekte her kayda Poc Ara linki koyduğumuz için tamamını sayıyoruz
-            document.getElementById('pocCount').innerText = pocs;
+    let rawData = [];
 
-            tableBody.innerHTML = '';
-
-            data.forEach(item => {
-                const pClass = item.priority ? item.priority.split(' ')[0] : 'P3';
-                const row = `
-                    <tr>
-                        <td class="fw-bold text-primary">${item.id}</td>
-                        <td><span class="badge priority-${pClass} p-2 shadow-sm">${item.priority}</span></td>
-                        <td><span class="badge bg-dark">${item.severity}</span></td>
-                        <td><span class="badge badge-mitre">${item.mitre || 'N/A'}</span></td>
-                        <td>
-                            <a href="${item.poc_link}" target="_blank" class="badge badge-poc p-2 shadow-sm">
-                                🔍 PoC Ara
-                            </a>
-                        </td>
-                        <td class="small text-muted" style="max-width:350px;">${item.description}</td>
-                        <td>
-                            <a href="${item.link}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill">Detay</a>
-                        </td>
-                    </tr>`;
-                tableBody.innerHTML += row;
-            });
-        } catch (e) {
-            console.error("Hata:", e);
-            tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Bağlantı Hatası: Veri çekilemedi.</td></tr>';
-        }
+    async function init() {
+        const res = await fetch('data.json?v=' + Date.now());
+        rawData = await res.json();
+        renderTable(rawData);
     }
-    loadData();
+
+    function renderTable(data) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        
+        // Stats
+        document.getElementById('totalCount').innerText = data.length;
+        document.getElementById('criticalCount').innerText = data.filter(d => d.priority === 'P0 - Emergency').length;
+        document.getElementById('epssCount').innerText = data.filter(d => parseInt(d.epss) > 80).length;
+        document.getElementById('exploitCount').innerText = data.length;
+
+        data.forEach(item => {
+            const row = `
+                <tr>
+                    <td>
+                        <div class="fw-bold text-primary">${item.id}</div>
+                        <span class="badge badge-vendor mt-1">${item.vendor}</span>
+                    </td>
+                    <td><span class="badge priority-${item.priority.split(' ')[0]} p-2">${item.priority}</span></td>
+                    <td>
+                        <div class="small">CVSS: <strong>${item.severity}</strong></div>
+                        <div class="badge badge-epss mt-1">Saldırı Olasılığı: ${item.epss}</div>
+                    </td>
+                    <td><span class="badge bg-secondary opacity-75">${item.mitre}</span></td>
+                    <td class="small text-muted" style="max-width:300px;">${item.description}</td>
+                    <td>
+                        <a href="${item.poc_link}" target="_blank" class="btn btn-sm btn-outline-danger mb-1 w-100">Exploit Ara</a>
+                        <a href="${item.link}" target="_blank" class="btn btn-sm btn-primary w-100">Detay</a>
+                    </td>
+                </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    function exportToCSV() {
+        let csv = "CVE ID,Vendor,Severity,EPSS,Priority,Description\n";
+        rawData.forEach(row => {
+            csv += `${row.id},${row.vendor},${row.severity},${row.epss},${row.priority},"${row.description.replace(/"/g, '""')}"\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "CVE_Intelligence_Report.csv";
+        link.click();
+    }
+
+    init();
 </script>
 </body>
 </html>
