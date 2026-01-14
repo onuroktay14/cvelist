@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>YApay Zeka Destekli CVE Takip Platformu</title>
+    <title>Yapay Zeka Destekli Tehdit İzleme Konsolu</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -11,7 +11,6 @@
             --card: #0d1117; 
             --neon: #58a6ff; 
             --border: #30363d; 
-            --text-muted: #8b949e;
         }
         
         body { 
@@ -21,7 +20,6 @@
             min-height: 100vh;
         }
         
-        /* Üst Panel */
         .info-panel {
             background: rgba(88, 166, 255, 0.05);
             border: 1px solid rgba(88, 166, 255, 0.2);
@@ -30,7 +28,6 @@
             padding: 20px;
         }
 
-        /* İstatistik Kartları */
         .stat-card { 
             background: #161b22; 
             border: 1px solid var(--border); 
@@ -38,13 +35,11 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
 
-        /* Ana Konsol Alanı (Beyazlıklar Temizlendi) */
         .main-console { 
             background: var(--card); 
             border: 1px solid var(--border); 
             border-radius: 16px; 
             padding: 25px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         .search-box { 
@@ -56,20 +51,17 @@
             width: 100%; 
         }
 
-        /* Tablo Tasarımı */
         .table { 
             --bs-table-bg: transparent; 
             --bs-table-color: #adbac7;
             border-collapse: separate;
-            border-spacing: 0 10px; /* Satır arası boşluk */
+            border-spacing: 0 10px;
         }
 
         .table thead th { 
-            background: transparent; 
             color: var(--neon); 
             border: none; 
             font-size: 0.75rem; 
-            letter-spacing: 1px;
             text-transform: uppercase;
         }
 
@@ -81,39 +73,45 @@
 
         .table tbody tr:hover { 
             background: #1c2128;
-            transform: scale(1.005);
             border-color: var(--neon);
         }
 
-        .table td { 
-            border: none; 
-            padding: 15px !important;
-        }
+        .table td { border: none; padding: 15px !important; }
 
-        /* Badge Renkleri */
-        .p-P0 { background: #da3633; color: white; padding: 4px 10px; border-radius: 6px; font-weight: bold; }
-        .p-P1 { background: #bc4c00; color: white; padding: 4px 10px; border-radius: 6px; font-weight: bold; }
+        .p-P0 { background: #da3633; color: white; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; }
+        .p-P1 { background: #bc4c00; color: white; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; }
 
-        /* Butonlar */
+        /* Buton İyileştirmeleri */
         .ai-btn { 
             background: #8957e5; 
             border: none; 
             color: white; 
             font-weight: bold; 
             border-radius: 6px; 
-            padding: 6px 12px; 
-            width: 100%; 
+            padding: 8px 16px; 
+            width: 100%;
+            margin-bottom: 8px;
+            transition: 0.3s;
         }
         
-        .export-btn {
-            background: #238636;
-            color: white;
-            border: none;
-            font-weight: bold;
+        .poc-btn {
+            background: transparent;
+            color: #adbac7;
+            border: 1px solid var(--border);
+            font-weight: 600;
             border-radius: 6px;
+            padding: 8px 16px;
+            width: 100%;
+            display: inline-block;
+            text-align: center;
+            text-decoration: none;
+            transition: 0.3s;
         }
 
-        .export-btn:hover { background: #2ea043; }
+        .ai-btn:hover { background: #a371f7; box-shadow: 0 0 15px rgba(137, 87, 229, 0.4); }
+        .poc-btn:hover { border-color: var(--neon); color: var(--neon); }
+        
+        .export-btn { background: #238636; color: white; border: none; font-weight: bold; border-radius: 6px; }
 
         footer a { color: var(--neon); text-decoration: none; }
     </style>
@@ -122,7 +120,7 @@
 
 <div class="container py-4">
     <div class="info-panel mb-4">
-        <h5 class="fw-bold text-info mb-2"><i class="fas fa-shield-halved me-2"></i>Mission Briefing</h5>
+        <h5 class="fw-bold text-info mb-2"><i class="fas fa-shield-halved me-2"></i>Misyon</h5>
         <p class="mb-0 small opacity-80">
             Bu sayfa, <b>Hackerler</b> tarafından aktif olarak sömürülen yazılım açıklarını (CVE) listeler. 
             Hangi <b>Vendor'un</b> hangi <b>Product'ında</b> bu açığın kullanılma ihtimalini (EPSS) ve önceliğini belirler. 
@@ -139,7 +137,7 @@
     <div class="main-console">
         <div class="d-flex justify-content-between align-items-center mb-4 row">
             <div class="col-md-6">
-                <h4 class="fw-bold text-white mb-0">TEHDİT İSTİHBARAT AKIŞI</h4>
+                <h4 class="fw-bold text-white mb-0">TEHDİT AKIŞI</h4>
             </div>
             <div class="col-md-6 d-flex gap-2">
                 <input type="text" id="search" class="search-box" placeholder="Arama (Vendor, CVE)..." onkeyup="filter()">
@@ -155,7 +153,7 @@
                         <th>ÖNCELİK</th>
                         <th>SKORLAR</th>
                         <th>MITRE</th>
-                        <th class="text-end">İŞLEM</th>
+                        <th class="text-end" style="width: 180px;">İŞLEMLER</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
@@ -199,10 +197,18 @@
     function render(data) {
         const tb = document.getElementById('tableBody');
         tb.innerHTML = '';
-        document.getElementById('totalCount').innerText = data.length;
-        document.getElementById('criticalCount').innerText = data.filter(d => d.priority.includes('P0')).length;
-        document.getElementById('epssCount').innerText = data.filter(d => parseInt(d.epss) > 70).length;
-        document.getElementById('exploitCount').innerText = data.length;
+        
+        // Mantıksal Sayaçlar
+        const total = data.length;
+        const critical = data.filter(d => d.priority.includes('P0')).length;
+        const highRisk = data.filter(d => parseInt(d.epss) > 80).length;
+        // Aktif Tehdit: Sadece Kritik ve EPSS skoru yüksek olanlar
+        const activeThreats = data.filter(d => d.priority.includes('P0') || parseInt(d.epss) > 75).length;
+
+        document.getElementById('totalCount').innerText = total;
+        document.getElementById('criticalCount').innerText = critical;
+        document.getElementById('epssCount').innerText = highRisk;
+        document.getElementById('exploitCount').innerText = activeThreats;
 
         data.forEach(i => {
             const pClass = i.priority.includes('P0') ? 'p-P0' : 'p-P1';
@@ -217,10 +223,10 @@
                         <div class="small">CVSS: <b class="text-white">${i.severity}</b></div>
                         <div class="text-warning small">EPSS: ${i.epss}</div>
                     </td>
-                    <td><a href="https://attack.mitre.org/techniques/${i.mitre}/" target="_blank" class="badge border border-secondary text-info text-decoration-none">${i.mitre}</a></td>
+                    <td><a href="https://attack.mitre.org/techniques/${i.mitre}/" target="_blank" class="badge border border-secondary text-info text-decoration-none" style="font-size: 0.7rem;">${i.mitre}</a></td>
                     <td class="text-end">
-                        <button class="ai-btn mb-2" onclick="openAI('${i.id}', '${i.vendor}', '${i.product}', '${i.description}')">AI ANALİZ</button>
-                        <a href="${i.poc_link}" target="_blank" class="btn btn-sm btn-outline-secondary w-100" style="font-size:10px">Github/PoC</a>
+                        <button class="ai-btn" onclick="openAI('${i.id}', '${i.vendor}', '${i.product}', '${i.description}')">AI ANALİZ</button>
+                        <a href="${i.poc_link}" target="_blank" class="poc-btn">Github/PoC</a>
                     </td>
                 </tr>`;
         });
@@ -232,13 +238,13 @@
     }
 
     function exportCSV() {
-        let csv = "CVE ID,Vendor,Product,Severity,EPSS,Priority\n";
+        let csv = "\uFEFFCVE ID,Vendor,Product,Severity,EPSS,Priority\n";
         raw.forEach(r => csv += `"${r.id}","${r.vendor}","${r.product}","${r.severity}","${r.epss}","${r.priority}"\n`);
-        const blob = new Blob([csv], { type: 'text/csv' });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'CVE_Istihbarat_Raporu.csv';
+        a.download = 'CVE_İstihbarat_Raporu.csv';
         a.click();
     }
 
@@ -246,12 +252,12 @@
         document.getElementById('mHeader').innerHTML = `<h6 class="text-danger fw-bold">${id} - ${v} ${p}</h6>`;
         document.getElementById('mDesc').innerText = desc;
         const steps = [
-            `<b>Analiz:</b> Bu zafiyet ${v} ${p} sistemlerinde kritik bir sömürü yüzeyi oluşturmaktadır.`,
-            `<b>Aksiyon:</b> Resmi güvenlik bültenini takip ederek yamayı acilen uygulayın.`,
-            `<b>Önlem:</b> Ağ geçidi üzerinde (WAF/IPS) ilgili CVE imzalarını aktif edin.`,
-            `<b>Takip:</b> Sömürü girişimlerine karşı SIEM üzerinde 'Honey-Token' takibi yapın.`
+            `<b>Teknik Analiz:</b> Bu zafiyet ${p} üzerinde uzaktan kod yürütme potansiyeline sahiptir.`,
+            `<b>Yamalama:</b> ${v} güvenlik merkezinden ilgili KB/Patch numarasını kontrol edin.`,
+            `<b>Sıkılaştırma:</b> Gereksiz servisleri kapatın ve dış dünyaya açık portları VPN arkasına alın.`,
+            `<b>Log Analizi:</b> Web sunucu loglarında 'exploit payload' izlerini araştırın.`
         ];
-        document.getElementById('mSteps').innerHTML = steps.map(s => `<div class="mb-2 p-2 border-start border-info bg-dark small">${s}</div>`).join('');
+        document.getElementById('mSteps').innerHTML = steps.map(s => `<div class="mb-2 p-2 border-start border-info bg-dark small shadow-sm">${s}</div>`).join('');
         new bootstrap.Modal(document.getElementById('aiModal')).show();
     }
     init();
