@@ -7,20 +7,31 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; }
-        .stat-card { border-radius: 12px; border: none; color: white; transition: 0.3s; }
-        .stat-card:hover { opacity: 0.9; cursor: pointer; }
+        .info-panel { background: #fff; border-left: 5px solid #0d6efd; border-radius: 8px; }
+        .stat-card { border-radius: 12px; border: none; color: white; transition: 0.3s; position: relative; overflow: hidden; }
         .priority-P0 { background: #d9534f !important; }
-        .badge-vendor { background: #e9ecef; color: #495057; font-weight: 600; border: 1px solid #dee2e6; }
+        .badge-vendor { background: #e9ecef; color: #0d6efd; font-weight: 700; border: 1px solid #dee2e6; }
+        .badge-product { background: #f8f9fa; color: #6c757d; border: 1px solid #dee2e6; font-size: 0.75rem; }
         .badge-epss { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
-        .table { background: white; border-radius: 10px; overflow: hidden; }
+        .table { background: white; border-radius: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container-fluid py-4 px-5">
+    
+    <div class="info-panel p-3 mb-4 shadow-sm">
+        <h5 class="fw-bold text-primary mb-1">🛡️ Bu Platform Ne İşe Yarar?</h5>
+        <p class="text-muted mb-0 small">
+            Bu sayfa, dünyada şu an siber saldırganlar tarafından <b>aktif olarak kullanılan</b> yazılım açıklarını (CVE) listeler. 
+            Hangi markanın hangi ürününde açık olduğunu gösterir, bu açığın kullanılma ihtimalini (EPSS) hesaplar ve öncelik sırasına koyar. 
+            Amacı, sistemlerinizi hangi sırayla güncellemeniz gerektiğini size söylemektir.
+        </p>
+    </div>
+
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-dark">Cyber Threat Intelligence Console</h2>
-        <button onclick="exportToCSV()" class="btn btn-success shadow-sm">📥 Verileri CSV Olarak İndir</button>
+        <h2 class="fw-bold text-dark mb-0">Cyber Threat Intelligence Console</h2>
+        <button onclick="exportToCSV()" class="btn btn-success shadow-sm">📥 Verileri CSV İndir</button>
     </div>
 
     <div class="row mb-4" id="statsRow">
@@ -32,38 +43,39 @@
         </div>
         <div class="col-md-3">
             <div class="card stat-card bg-danger p-3 shadow-sm">
-                <h6>Acil Müdahale (P0)</h6>
+                <h6>Kritik (P0)</h6>
                 <h3 id="criticalCount">0</h3>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card stat-card bg-warning text-dark p-3 shadow-sm">
-                <h6>Yüksek EPSS (>%80)</h6>
+                <h6>Yüksek Risk (>%80)</h6>
                 <h3 id="epssCount">0</h3>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card stat-card bg-info p-3 shadow-sm">
-                <h6>Aktif Sömürülen</h6>
+                <h6>Aktif Sömürü</h6>
                 <h3 id="exploitCount">0</h3>
             </div>
         </div>
     </div>
 
     <div class="card border-0 shadow-sm p-3">
-        <table class="table table-hover align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th>CVE ID & Marka</th>
-                    <th>Öncelik</th>
-                    <th>CVSS / EPSS</th>
-                    <th>MITRE Tekniği</th>
-                    <th>Açıklama</th>
-                    <th>İşlem</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>CVE & Etkilenen Sistem</th>
+                        <th>Aciliyet</th>
+                        <th>Risk Analizi</th>
+                        <th>Açıklama</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -71,18 +83,21 @@
     let rawData = [];
 
     async function init() {
-        const res = await fetch('data.json?v=' + Date.now());
-        rawData = await res.json();
-        renderTable(rawData);
+        try {
+            const res = await fetch('data.json?v=' + Date.now());
+            rawData = await res.json();
+            renderTable(rawData);
+        } catch (e) {
+            console.error("Yükleme hatası:", e);
+        }
     }
 
     function renderTable(data) {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
         
-        // Stats
         document.getElementById('totalCount').innerText = data.length;
-        document.getElementById('criticalCount').innerText = data.filter(d => d.priority === 'P0 - Emergency').length;
+        document.getElementById('criticalCount').innerText = data.filter(d => d.priority && d.priority.includes('P0')).length;
         document.getElementById('epssCount').innerText = data.filter(d => parseInt(d.epss) > 80).length;
         document.getElementById('exploitCount').innerText = data.length;
 
@@ -90,19 +105,23 @@
             const row = `
                 <tr>
                     <td>
-                        <div class="fw-bold text-primary">${item.id}</div>
-                        <span class="badge badge-vendor mt-1">${item.vendor}</span>
+                        <div class="fw-bold text-primary">${item.id || 'N/A'}</div>
+                        <div class="mt-1">
+                            <span class="badge badge-vendor">${item.vendor || 'Bilinmiyor'}</span>
+                            <span class="badge badge-product">${item.product || 'Genel Sistem'}</span>
+                        </div>
                     </td>
-                    <td><span class="badge priority-${item.priority.split(' ')[0]} p-2">${item.priority}</span></td>
+                    <td><span class="badge priority-${(item.priority || 'P3').split(' ')[0]} p-2">${item.priority || 'P3 - Low'}</span></td>
                     <td>
-                        <div class="small">CVSS: <strong>${item.severity}</strong></div>
-                        <div class="badge badge-epss mt-1">Saldırı Olasılığı: ${item.epss}</div>
+                        <div class="small">CVSS: <strong>${item.severity || '0'}</strong></div>
+                        <div class="badge badge-epss mt-1">Saldırı Olasılığı: ${item.epss || '0%'}</div>
                     </td>
-                    <td><span class="badge bg-secondary opacity-75">${item.mitre}</span></td>
-                    <td class="small text-muted" style="max-width:300px;">${item.description}</td>
+                    <td class="small text-muted" style="max-width:350px;">${item.description || 'Açıklama yok.'}</td>
                     <td>
-                        <a href="${item.poc_link}" target="_blank" class="btn btn-sm btn-outline-danger mb-1 w-100">Exploit Ara</a>
-                        <a href="${item.link}" target="_blank" class="btn btn-sm btn-primary w-100">Detay</a>
+                        <div class="btn-group-vertical w-100">
+                            <a href="${item.poc_link}" target="_blank" class="btn btn-sm btn-outline-danger px-3">Exploit Bul</a>
+                            <a href="${item.link}" target="_blank" class="btn btn-sm btn-primary">NIST Detay</a>
+                        </div>
                     </td>
                 </tr>`;
             tbody.innerHTML += row;
@@ -110,14 +129,14 @@
     }
 
     function exportToCSV() {
-        let csv = "CVE ID,Vendor,Severity,EPSS,Priority,Description\n";
+        let csv = "CVE ID,Vendor,Product,Severity,EPSS,Priority,Description\n";
         rawData.forEach(row => {
-            csv += `${row.id},${row.vendor},${row.severity},${row.epss},${row.priority},"${row.description.replace(/"/g, '""')}"\n`;
+            csv += `${row.id},${row.vendor},${row.product},${row.severity},${row.epss},${row.priority},"${row.description.replace(/"/g, '""')}"\n`;
         });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.download = "CVE_Intelligence_Report.csv";
+        link.download = "CVE_Risk_Raporu.csv";
         link.click();
     }
 
