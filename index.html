@@ -3,32 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Powered Cyber Threat Intelligence</title>
+    <title>Enterprise CVE Intelligence | Onur Oktay</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
+        .content { flex: 1; }
         .info-panel { background: #e0f2f7; border-left: 5px solid #0d6efd; border-radius: 8px; color: #004085; }
         .stat-card { border-radius: 12px; border: none; color: white; transition: 0.3s; position: relative; overflow: hidden; }
-        .priority-P0 { background: #d9534f !important; }
+        
+        /* Aciliyet Renk Düzeltmeleri */
+        .priority-P0 { background: #d9534f !important; color: white !important; } /* Emergency */
+        .priority-P1 { background: #fd7e14 !important; color: white !important; } /* High - Artık Görünür */
+        .priority-P2 { background: #ffc107 !important; color: #212529 !important; } /* Medium */
+        .priority-P3 { background: #0dcaf0 !important; color: white !important; } /* Low */
+        
         .badge-vendor { background: #e9ecef; color: #0d6efd; font-weight: 700; border: 1px solid #dee2e6; }
         .badge-product { background: #f8f9fa; color: #6c757d; border: 1px solid #dee2e6; font-size: 0.75rem; }
         .badge-epss { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
         .ai-solution-button { background-color: #6f42c1; color: white; border: none; transition: background-color 0.2s; }
-        .ai-solution-button:hover { background-color: #5a34a0; }
-        .modal-body ul li { margin-bottom: 8px; }
-        .table { background: white; border-radius: 10px; }
+        .ai-solution-button:hover { background-color: #5a34a0; color: white; }
+        
+        /* Footer Stili */
+        footer { background: #ffffff; border-top: 1px solid #dee2e6; padding: 20px 0; margin-top: 40px; text-align: center; color: #6c757d; }
+        footer a { color: #0d6efd; text-decoration: none; font-weight: bold; }
+        footer a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
-<div class="container-fluid py-4 px-5">
+<div class="container-fluid py-4 px-5 content">
     
     <div class="info-panel p-3 mb-4 shadow-sm">
         <h5 class="fw-bold text-primary mb-1"><i class="fas fa-info-circle me-2"></i>Bu Platform Ne İşe Yarar?</h5>
         <p class="text-muted mb-0 small">
-            Bu sayfa, siber saldırganlar tarafından <b>aktif olarak sömürülen</b> yazılım açıklarını (CVE) listeler. 
-            Hangi markanın hangi ürününde açık olduğunu gösterir, bu açığın kullanılma ihtimalini (EPSS) ve önceliğini belirler. 
+            Bu sayfa, <b>Hackerler</b> tarafından aktif olarak sömürülen yazılım açıklarını (CVE) listeler. 
+            Hangi <b>Vendor'un</b> hangi <b>Product'ında</b> bu açığın kullanılma ihtimalini (EPSS) ve önceliğini belirler. 
             Amacı, kritik zafiyetleri hızlıca tespit etmenize ve güvenlik önlemlerinizi buna göre şekillendirmenize yardımcı olmaktır.
         </p>
     </div>
@@ -38,7 +48,7 @@
         <button onclick="exportToCSV()" class="btn btn-success shadow-sm"><i class="fas fa-download me-2"></i>Verileri CSV İndir</button>
     </div>
 
-    <div class="row mb-4" id="statsRow">
+    <div class="row mb-4">
         <div class="col-md-3">
             <div class="card stat-card bg-dark p-3 shadow-sm">
                 <h6>Toplam İzlenen</h6>
@@ -83,39 +93,37 @@
     </div>
 </div>
 
-<div class="modal fade" id="aiSolutionModal" tabindex="-1" aria-labelledby="aiSolutionModalLabel" aria-hidden="true">
+<div class="modal fade" id="aiSolutionModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
+        <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="aiSolutionModalLabel"><i class="fas fa-robot me-2"></i>AI Destekli Çözüm Önerisi</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title"><i class="fas fa-robot me-2"></i>AI Destekli Çözüm Önerisi</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <h6 id="modalCveId" class="fw-bold text-danger"></h6>
                 <p id="modalDescription" class="text-muted small"></p>
                 <hr>
                 <h6 class="fw-bold text-success mb-3">🛠️ Güvenlik Önlemleri ve Adımlar:</h6>
-                <ul id="modalSolutionSteps"></ul>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                <ul id="modalSolutionSteps" class="list-unstyled"></ul>
             </div>
         </div>
     </div>
 </div>
 
+<footer>
+    <div class="container">
+        <p class="mb-0">Bu araç <a href="https://www.linkedin.com/in/onuroktaycom/" target="_blank">Onur Oktay</a> tarafından üretilmiştir.</p>
+    </div>
+</footer>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     let rawData = [];
-
     async function init() {
-        try {
-            const res = await fetch('data.json?v=' + Date.now());
-            rawData = await res.json();
-            renderTable(rawData);
-        } catch (e) {
-            console.error("Yükleme hatası:", e);
-        }
+        const res = await fetch('data.json?v=' + Date.now());
+        rawData = await res.json();
+        renderTable(rawData);
     }
 
     function renderTable(data) {
@@ -128,27 +136,28 @@
         document.getElementById('exploitCount').innerText = data.length;
 
         data.forEach(item => {
+            const pKey = (item.priority || 'P3').split(' ')[0];
             const row = `
                 <tr>
                     <td>
-                        <div class="fw-bold text-primary">${item.id || 'N/A'}</div>
+                        <div class="fw-bold text-primary">${item.id}</div>
                         <div class="mt-1">
-                            <span class="badge badge-vendor">${item.vendor || 'Bilinmiyor'}</span>
-                            <span class="badge badge-product">${item.product || 'Genel Sistem'}</span>
+                            <span class="badge badge-vendor">${item.vendor}</span>
+                            <span class="badge badge-product">${item.product}</span>
                         </div>
                     </td>
-                    <td><span class="badge priority-${(item.priority || 'P3').split(' ')[0]} p-2">${item.priority || 'P3 - Low'}</span></td>
+                    <td><span class="badge priority-${pKey} p-2 shadow-sm w-100">${item.priority}</span></td>
                     <td>
-                        <div class="small">CVSS: <strong>${item.severity || '0'}</strong></div>
-                        <div class="badge badge-epss mt-1">Saldırı Olasılığı: ${item.epss || '0%'}</div>
+                        <div class="small">CVSS: <strong>${item.severity}</strong></div>
+                        <div class="badge badge-epss mt-1">Saldırı Olasılığı: ${item.epss}</div>
                     </td>
-                    <td class="small text-muted" style="max-width:300px;">${item.description || 'Açıklama yok.'}</td>
+                    <td class="small text-muted" style="max-width:350px;">${item.description}</td>
                     <td>
                         <div class="btn-group-vertical w-100">
-                            <button class="btn btn-sm ai-solution-button mb-1 px-3" onclick="showAiSolution('${item.id}', '${item.description}', '${item.vendor}', '${item.product}')">
+                            <button class="btn btn-sm ai-solution-button mb-1" onclick="showAiSolution('${item.id}', '${item.description}', '${item.vendor}', '${item.product}')">
                                 <i class="fas fa-robot me-1"></i>AI Çözüm
                             </button>
-                            <a href="${item.poc_link}" target="_blank" class="btn btn-sm btn-outline-danger mb-1 px-3">Exploit Bul</a>
+                            <a href="${item.poc_link}" target="_blank" class="btn btn-sm btn-outline-danger mb-1">Exploit Bul</a>
                             <a href="${item.link}" target="_blank" class="btn btn-sm btn-primary">NIST Detay</a>
                         </div>
                     </td>
@@ -162,46 +171,29 @@
         document.getElementById('modalDescription').innerText = description;
         const solutionSteps = document.getElementById('modalSolutionSteps');
         solutionSteps.innerHTML = '';
-
-        const commonSolutions = [
-            `En kısa sürede ${vendor} tarafından yayınlanan resmi yamayı (${product} için) uygulayın.`,
-            "Sistemlerinizdeki tüm yazılımları ve işletim sistemlerini güncel tutun.",
-            "Güvenlik duvarı (Firewall) kurallarınızı sıkılaştırın ve sadece gerekli portlara izin verin.",
-            "Uygulama beyaz listeleme (Application Whitelisting) kullanarak sadece güvenilir programların çalışmasına izin verin.",
-            "Düzenli güvenlik denetimleri ve sızma testleri (Penetration Testing) yapın.",
-            "Kullanıcı farkındalık eğitimleri ile olası sosyal mühendislik saldırılarına karşı hazırlıklı olun."
+        const steps = [
+            `En kısa sürede ${vendor} tarafından yayınlanan ${product} güncellemesini uygulayın.`,
+            "Sistem erişim loglarını şüpheli aktivitelere karşı tarayın.",
+            "Geçici bir çözüm olarak, saldırı yüzeyini azaltmak için ilgili portları kısıtlayın.",
+            "Güvenlik duvarı üzerinde IPS/IDS kurallarını aktif hale getirin."
         ];
-
-        // Zafiyetin içeriğine göre daha spesifik öneriler (basit simülasyon)
-        if (description.toLowerCase().includes("uzak kod yürütme") || description.toLowerCase().includes("rce")) {
-            commonSolutions.unshift("Kritik sunucuların internete açık portlarını kapatın veya erişimi kısıtlayın.");
-        }
-        if (description.toLowerCase().includes("veri sızıntısı") || description.toLowerCase().includes("bilgi ifşası")) {
-            commonSolutions.unshift("Hassas verileri şifreleyin ve erişim kontrollerini güçlendirin.");
-        }
-
-        commonSolutions.forEach(step => {
+        steps.forEach(step => {
             const li = document.createElement('li');
+            li.className = "mb-2";
             li.innerHTML = `<i class="fas fa-check-circle text-success me-2"></i>${step}`;
             solutionSteps.appendChild(li);
         });
-
-        var aiSolutionModal = new bootstrap.Modal(document.getElementById('aiSolutionModal'));
-        aiSolutionModal.show();
+        new bootstrap.Modal(document.getElementById('aiSolutionModal')).show();
     }
 
     function exportToCSV() {
-        let csv = "CVE ID,Vendor,Product,Severity,EPSS,Priority,Description,MITRE,Exploit Status,NIST Link,PoC Link\n";
-        rawData.forEach(row => {
-            csv += `"${row.id}","${row.vendor}","${row.product}","${row.severity}","${row.epss}","${row.priority}","${row.description.replace(/"/g, '""')}","${row.mitre}","${row.exploit_status}","${row.link}","${row.poc_link}"\n`;
-        });
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        let csv = "CVE ID,Vendor,Product,Severity,EPSS,Priority,Description\n";
+        rawData.forEach(r => csv += `"${r.id}","${r.vendor}","${r.product}","${r.severity}","${r.epss}","${r.priority}","${r.description.replace(/"/g, '""')}"\n`);
         const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
+        link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
         link.download = "CVE_Risk_Raporu.csv";
         link.click();
     }
-
     init();
 </script>
 </body>
