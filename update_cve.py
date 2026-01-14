@@ -7,7 +7,6 @@ def calculate_priority(cvss, epss):
     try:
         score = float(cvss)
         epss_val = float(epss)
-        # Gerçek dünya mantığı: CVSS yüksek VE EPSS yüksekse P0
         if score >= 9.0 and epss_val > 0.5: return "P0 - Emergency"
         elif score >= 7.0: return "P1 - High"
         elif score >= 4.0: return "P2 - Medium"
@@ -17,7 +16,17 @@ def calculate_priority(cvss, epss):
 def fetch_cve_data():
     cisa_url = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
     processed_list = []
-    vendors = ["Microsoft", "Cisco", "Linux", "Ivanti", "Google", "Fortinet", "Apple", "VMware"]
+    
+    # Gerçekçi veri eşleşmeleri
+    vendor_products = {
+        "Microsoft": ["Windows 11", "Exchange Server", "Active Directory", "Azure Code Executor"],
+        "Cisco": ["AnyConnect VPN", "IOS XE Router", "Nexus Switch"],
+        "Linux": ["Kernel 5.x", "Ubuntu Jammy", "OpenSSL Library"],
+        "Ivanti": ["Connect Secure", "Endpoint Manager"],
+        "Google": ["Chrome Browser", "Android OS", "Pixel Firmware"],
+        "Fortinet": ["FortiGate Firewall", "FortiClient"],
+        "VMware": ["ESXi Hypervisor", "vCenter Server"]
+    }
     
     try:
         response = requests.get(cisa_url, timeout=20)
@@ -28,14 +37,18 @@ def fetch_cve_data():
             for item in vulnerabilities[:60]:
                 cve_id = item.get('cveID')
                 score = round(random.uniform(7.0, 9.8), 1)
-                # EPSS Skoru ekliyoruz (Saldırı ihtimali %)
                 epss = round(random.uniform(0.1, 0.95), 2)
+                
+                # Rastgele marka ve o markaya ait bir ürün seçelim
+                vendor = random.choice(list(vendor_products.keys()))
+                product = random.choice(vendor_products[vendor])
                 
                 processed_list.append({
                     "id": cve_id,
-                    "vendor": random.choice(vendors), # Etkilenen Marka
+                    "vendor": vendor,
+                    "product": product, # Etkilenen Ürün eklendi
                     "severity": str(score),
-                    "epss": f"{int(epss*100)}%", # Yüzdelik gösterim
+                    "epss": f"{int(epss*100)}%",
                     "priority": calculate_priority(score, epss),
                     "description": item.get('shortDescription', '')[:180] + "...",
                     "mitre": "T1190 - Exploit Public-Facing App",
