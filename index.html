@@ -3,90 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VULNARABILITY DASHBOARD</title>
+    <title>CVE Priority Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .container { margin-top: 50px; }
-        .table-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        
-        /* Priority Badge Renkleri */
-        .priority-P0 { background-color: #dc3545 !important; color: white; animation: blinker 1.5s linear infinite; }
-        .priority-P1 { background-color: #fd7e14 !important; color: white; }
-        .priority-P2 { background-color: #ffc107 !important; color: #000; }
-        .priority-P3 { background-color: #0dcaf0 !important; color: white; }
-        
-        @keyframes blinker { 50% { opacity: 0.5; } }
-        
-        .severity-badge { font-weight: bold; padding: 5px 10px; border-radius: 20px; font-size: 0.85rem; }
-        .cve-id { font-weight: 600; color: #0d6efd; }
+        body { background-color: #f4f7f9; }
+        .priority-P0 { background-color: #ff4d4d !important; animation: pulse 2s infinite; }
+        .priority-P1 { background-color: #ff8c1a !important; }
+        .priority-P2 { background-color: #ffd11a !important; color: #000 !important; }
+        .priority-P3 { background-color: #33ccff !important; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        .card { border: none; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>CVE & Vulnerability Priority List</h2>
-        <span id="last-update" class="text-muted small">Son Güncelleme: Yükleniyor...</span>
-    </div>
-
-    <div class="table-container">
-        <table class="table table-hover">
-            <thead class="table-light">
-                <tr>
-                    <th>CVE ID</th>
-                    <th>Priority (Öncelik)</th>
-                    <th>Severity (Puan)</th>
-                    <th>Açıklama</th>
-                    <th>Durum</th>
-                </tr>
-            </thead>
-            <tbody id="cve-table-body">
+<div class="container py-5">
+    <div class="card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold text-primary">CVE Priority List</h2>
+            <input type="text" id="searchInput" class="form-control w-25" placeholder="CVE veya marka ara...">
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>CVE ID</th>
+                        <th>Öncelik</th>
+                        <th>CVSS</th>
+                        <th>Açıklama</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="5" class="text-center">Veriler yükleniyor...</td></tr>
                 </tbody>
-        </table>
+            </table>
+        </div>
     </div>
 </div>
 
 <script>
-    async function loadCVEData() {
+    async function fetchData() {
         try {
-            // GitHub üzerindeki data.json dosyanı çeker
-            const response = await fetch('data.json');
-            const data = await response.json();
+            // Cache kırmak için zaman damgası ekliyoruz
+            const res = await fetch('data.json?t=' + Date.now());
+            const data = await res.json();
+            const tableBody = document.getElementById('tableBody');
             
-            const tableBody = document.getElementById('cve-table-body');
-            tableBody.innerHTML = '';
+            if (data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-warning">Şu an gösterilecek yeni veri yok.</td></tr>';
+                return;
+            }
 
-            data.forEach(item => {
-                const priorityClass = item.priority.split(' ')[0]; // P0, P1 vb. alır
-                
-                const row = `
-                    <tr>
-                        <td class="cve-id">${item.id}</td>
-                        <td>
-                            <span class="badge severity-badge priority-${priorityClass}">
-                                ${item.priority}
-                            </span>
-                        </td>
-                        <td><strong>${item.severity || 'N/A'}</strong></td>
-                        <td class="small text-secondary">${item.description}</td>
-                        <td><span class="badge bg-light text-dark border">${item.status}</span></td>
-                    </tr>
-                `;
-                tableBody.innerHTML += row;
-            });
+            function displayData(filterText = '') {
+                tableBody.innerHTML = '';
+                data.filter(item => item.id.toLowerCase().includes(filterText.toLowerCase()) || 
+                                    item.description.toLowerCase().includes(filterText.toLowerCase()))
+                .forEach(item => {
+                    const row = `
+                        <tr>
+                            <td class="fw-bold">${item.id}</td>
+                            <td><span class="badge priority-${item.priority.split(' ')[0]} p-2">${item.priority}</span></td>
+                            <td><span class="badge bg-dark">${item.severity}</span></td>
+                            <td class="small text-muted">${item.description}</td>
+                            <td><a href="${item.link}" target="_blank" class="btn btn-sm btn-outline-primary">Detay</a></td>
+                        </tr>`;
+                    tableBody.innerHTML += row;
+                });
+            }
 
-            document.getElementById('last-update').innerText = `Son Güncelleme: ${new Date().toLocaleString('tr-TR')}`;
+            displayData();
+            document.getElementById('searchInput').addEventListener('input', (e) => displayData(e.target.value));
 
-        } catch (error) {
-            console.error('Veri yüklenirken hata:', error);
-            document.getElementById('cve-table-body').innerHTML = '<tr><td colspan="5" class="text-center text-danger">Veri yüklenemedi. GitHub Action henüz çalışmamış olabilir.</td></tr>';
+        } catch (err) {
+            document.getElementById('tableBody').innerHTML = '<tr><td colspan="5" class="text-center text-danger">Veri çekilemedi. Lütfen daha sonra tekrar deneyin.</td></tr>';
         }
     }
-
-    // Sayfa açıldığında veriyi yükle
-    loadCVEData();
+    fetchData();
 </script>
-
 </body>
 </html>
