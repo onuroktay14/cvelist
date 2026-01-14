@@ -2,14 +2,26 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Yapay Zeka Destekli CVE Tehdit İstihbarat Konsolu</title>
+    <title>YApay Zeka Destekli CVE Takip Platformu</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --bg: #010409; --card: #0d1117; --neon: #58a6ff; --border: #30363d; }
-        body { background: var(--bg); color: #adbac7; font-family: 'Inter', sans-serif; }
+        :root { 
+            --bg: #010409; 
+            --card: #0d1117; 
+            --neon: #58a6ff; 
+            --border: #30363d; 
+            --text-muted: #8b949e;
+        }
         
-        /* Geri Gelen Açıklama Paneli */
+        body { 
+            background: var(--bg); 
+            color: #adbac7; 
+            font-family: 'Inter', sans-serif; 
+            min-height: 100vh;
+        }
+        
+        /* Üst Panel */
         .info-panel {
             background: rgba(88, 166, 255, 0.05);
             border: 1px solid rgba(88, 166, 255, 0.2);
@@ -18,33 +30,102 @@
             padding: 20px;
         }
 
-        .main-console { background: #0d1117; border: 1px solid var(--border); border-radius: 12px; padding: 25px; }
-        .stat-card { background: #161b22; border: 1px solid var(--border); border-radius: 10px; }
-        .search-box { background: #010409; border: 1px solid var(--border); color: white; border-radius: 8px; padding: 10px 15px; width: 100%; }
-        
-        .table { color: #adbac7; }
-        .table thead th { background: #161b22; color: var(--neon); border: none; font-size: 0.75rem; }
-        .table tbody tr { border-bottom: 1px solid var(--border); transition: 0.2s; }
-        .table tbody tr:hover { background: rgba(255,255,255,0.02); }
+        /* İstatistik Kartları */
+        .stat-card { 
+            background: #161b22; 
+            border: 1px solid var(--border); 
+            border-radius: 10px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
 
-        .p-P0 { background: #da3633; color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.7rem; }
-        .p-P1 { background: #bc4c00; color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.7rem; }
+        /* Ana Konsol Alanı (Beyazlıklar Temizlendi) */
+        .main-console { 
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            border-radius: 16px; 
+            padding: 25px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
 
-        .ai-btn { background: #8957e5; border: none; color: white; font-weight: bold; border-radius: 6px; padding: 5px 10px; width: 100%; transition: 0.3s; }
-        .ai-btn:hover { background: #a371f7; box-shadow: 0 0 15px rgba(137, 87, 229, 0.4); }
+        .search-box { 
+            background: #010409; 
+            border: 1px solid var(--border); 
+            color: white; 
+            border-radius: 8px; 
+            padding: 10px 15px; 
+            width: 100%; 
+        }
+
+        /* Tablo Tasarımı */
+        .table { 
+            --bs-table-bg: transparent; 
+            --bs-table-color: #adbac7;
+            border-collapse: separate;
+            border-spacing: 0 10px; /* Satır arası boşluk */
+        }
+
+        .table thead th { 
+            background: transparent; 
+            color: var(--neon); 
+            border: none; 
+            font-size: 0.75rem; 
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .table tbody tr { 
+            background: #161b22; 
+            border: 1px solid var(--border);
+            transition: 0.2s ease-in-out;
+        }
+
+        .table tbody tr:hover { 
+            background: #1c2128;
+            transform: scale(1.005);
+            border-color: var(--neon);
+        }
+
+        .table td { 
+            border: none; 
+            padding: 15px !important;
+        }
+
+        /* Badge Renkleri */
+        .p-P0 { background: #da3633; color: white; padding: 4px 10px; border-radius: 6px; font-weight: bold; }
+        .p-P1 { background: #bc4c00; color: white; padding: 4px 10px; border-radius: 6px; font-weight: bold; }
+
+        /* Butonlar */
+        .ai-btn { 
+            background: #8957e5; 
+            border: none; 
+            color: white; 
+            font-weight: bold; 
+            border-radius: 6px; 
+            padding: 6px 12px; 
+            width: 100%; 
+        }
         
+        .export-btn {
+            background: #238636;
+            color: white;
+            border: none;
+            font-weight: bold;
+            border-radius: 6px;
+        }
+
+        .export-btn:hover { background: #2ea043; }
+
         footer a { color: var(--neon); text-decoration: none; }
     </style>
 </head>
 <body>
 
 <div class="container py-4">
-    <div class="info-panel mb-4 shadow-sm">
-        <h5 class="fw-bold text-info mb-2"><i class="fas fa-shield-halved me-2"></i>Bu Platform Ne İşe Yarar?</h5>
+    <div class="info-panel mb-4">
+        <h5 class="fw-bold text-info mb-2"><i class="fas fa-shield-halved me-2"></i>Mission Briefing</h5>
         <p class="mb-0 small opacity-80">
             Bu sayfa, <b>Hackerler</b> tarafından aktif olarak sömürülen yazılım açıklarını (CVE) listeler. 
             Hangi <b>Vendor'un</b> hangi <b>Product'ında</b> bu açığın kullanılma ihtimalini (EPSS) ve önceliğini belirler. 
-            Amacı, kritik zafiyetleri hızlıca tespit etmenize ve güvenlik önlemlerinizi buna göre şekillendirmenize yardımcı olmaktır.
         </p>
     </div>
 
@@ -57,9 +138,12 @@
 
     <div class="main-console">
         <div class="d-flex justify-content-between align-items-center mb-4 row">
-            <div class="col-md-7"><h4 class="fw-bold text-white mb-0">TEHDİT İSTİHBARAT AKIŞI</h4></div>
-            <div class="col-md-5 mt-2 mt-md-0">
-                <input type="text" id="search" class="search-box" placeholder="Vendor, Ürün veya CVE Ara..." onkeyup="filter()">
+            <div class="col-md-6">
+                <h4 class="fw-bold text-white mb-0">TEHDİT İSTİHBARAT AKIŞI</h4>
+            </div>
+            <div class="col-md-6 d-flex gap-2">
+                <input type="text" id="search" class="search-box" placeholder="Arama (Vendor, CVE)..." onkeyup="filter()">
+                <button onclick="exportCSV()" class="btn export-btn"><i class="fas fa-file-csv me-2"></i>EXPORT</button>
             </div>
         </div>
 
@@ -94,8 +178,7 @@
             <div class="modal-body p-4">
                 <div id="mHeader" class="mb-3"></div>
                 <div class="bg-black p-3 rounded mb-4 small border border-secondary" id="mDesc"></div>
-                
-                <h6 class="text-success fw-bold mb-3 small uppercase"><i class="fas fa-tools me-2"></i>ADIM ADIM KAPATMA VE YAMALAMA PLANI:</h6>
+                <h6 class="text-success fw-bold mb-3 small"><i class="fas fa-tools me-2"></i>ADIM ADIM KAPATMA PLANI:</h6>
                 <div id="mSteps"></div>
             </div>
         </div>
@@ -106,9 +189,11 @@
 <script>
     let raw = [];
     async function init() {
-        const r = await fetch('data.json?v=' + Date.now());
-        raw = await r.json();
-        render(raw);
+        try {
+            const r = await fetch('data.json?v=' + Date.now());
+            raw = await r.json();
+            render(raw);
+        } catch (e) { console.error("Veri yüklenemedi", e); }
     }
 
     function render(data) {
@@ -146,18 +231,27 @@
         render(raw.filter(d => d.vendor.toLowerCase().includes(q) || d.product.toLowerCase().includes(q) || d.id.toLowerCase().includes(q)));
     }
 
+    function exportCSV() {
+        let csv = "CVE ID,Vendor,Product,Severity,EPSS,Priority\n";
+        raw.forEach(r => csv += `"${r.id}","${r.vendor}","${r.product}","${r.severity}","${r.epss}","${r.priority}"\n`);
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'CVE_Istihbarat_Raporu.csv';
+        a.click();
+    }
+
     function openAI(id, v, p, desc) {
         document.getElementById('mHeader').innerHTML = `<h6 class="text-danger fw-bold">${id} - ${v} ${p}</h6>`;
         document.getElementById('mDesc').innerText = desc;
-        
         const steps = [
-            `<b>Sömürü Senaryosu:</b> Saldırganlar bu zafiyeti kullanarak ${p} sistemi üzerinde yetkisiz kod çalıştırabilir (RCE) veya hassas verilere erişebilir.`,
-            `<b>Acil Aksiyon:</b> ${v} tarafından yayınlanan en güncel güvenlik yaması ivedilikle test edilip uygulanmalıdır.`,
-            `<b>Geçici Önlem:</b> Yama uygulanana kadar ağ seviyesinde bu servis için kullanılan portlar (IPS/IDS) ile sıkı takibe alınmalı veya erişim kısıtlanmalıdır.`,
-            `<b>İzleme:</b> SIEM/EDR sistemleri üzerinden şüpheli 'shell' aktiviteleri ve yanal hareketler (lateral movement) için özel korelasyon kuralları yazılmalıdır.`
+            `<b>Analiz:</b> Bu zafiyet ${v} ${p} sistemlerinde kritik bir sömürü yüzeyi oluşturmaktadır.`,
+            `<b>Aksiyon:</b> Resmi güvenlik bültenini takip ederek yamayı acilen uygulayın.`,
+            `<b>Önlem:</b> Ağ geçidi üzerinde (WAF/IPS) ilgili CVE imzalarını aktif edin.`,
+            `<b>Takip:</b> Sömürü girişimlerine karşı SIEM üzerinde 'Honey-Token' takibi yapın.`
         ];
-        
-        document.getElementById('mSteps').innerHTML = steps.map(s => `<div class="mb-3 p-2 border-start border-info bg-dark small shadow-sm">${s}</div>`).join('');
+        document.getElementById('mSteps').innerHTML = steps.map(s => `<div class="mb-2 p-2 border-start border-info bg-dark small">${s}</div>`).join('');
         new bootstrap.Modal(document.getElementById('aiModal')).show();
     }
     init();
