@@ -1,1 +1,10 @@
-[]
+[
+    {
+        "id": "DEBUG-MODE-ACTIVE",
+        "severity": "5.0",
+        "priority": "P2 - Medium",
+        "description": "Bağlantı hatası oluştu: 404 Client Error: Not Found for url: https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/recent.json",
+        "status": "ERROR",
+        "link": "#"
+    }
+]
